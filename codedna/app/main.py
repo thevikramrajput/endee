@@ -190,7 +190,7 @@ if btn and repo:
                 col5.metric("Health Score", f"{rd['overall_score']}/100")
                 
                 st.markdown("<br/>", unsafe_allow_html=True)
-                t1, t2 = st.tabs(["🔍 Semantic Search Demo", "🏥 Health Diagnostics"])
+                t1, t2, t3 = st.tabs(["🔍 Semantic Search Demo", "🏥 Health Diagnostics", "📈 Architecture Map"])
                 
                 with t1:
                     st.markdown("### Ask questions about the codebase")
@@ -203,11 +203,28 @@ if btn and repo:
                 
                 with t2:
                     st.markdown("### Anti-Pattern Detections")
-                    if not rd.get("issues"):
+                    violations = getattr(R["health"], "violations", [])
+                    if not violations:
                         st.success("No major issues detected!")
                     else:
-                        for issue in rd["issues"]:
-                            st.warning(f"**{issue['type']}**: {issue['name']} ({issue['severity']})")
+                        for issue in violations:
+                            st.warning(f"**{issue.pattern_name}** ({issue.severity}): {issue.description} in `{issue.code_unit_name}`")
+                            
+                with t3:
+                    st.markdown("### Codebase Vector Projection (t-SNE)")
+                    st.markdown("Visualising dense AI representations of the repository structurally.")
+                    if R.get("evo") and R["evo"].get("points"):
+                        import pandas as pd
+                        import plotly.express as px
+                        df = pd.DataFrame(R["evo"]["points"])
+                        fig = px.scatter(
+                            df, x="x", y="y", color="type",
+                            hover_name="name", hover_data=["file", "complexity"],
+                            title="2D Semantic Mapping of Functions/Classes"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.info("No genome map data generated for this repository.")
                 
             except Exception as e:
                 status_box.update(label=f"❌ Analysis failed: {e}", state="error")
