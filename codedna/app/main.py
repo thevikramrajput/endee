@@ -99,8 +99,8 @@ def get_video_html(filepath):
             data = f.read()
         b64 = base64.b64encode(data).decode()
         return f'<video autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;"><source src="data:video/mp4;base64,{b64}" type="video/mp4"></video>'
-    except:
-        return '<div>🎬 Animated Product Demo / Map Visual Placeholder</div>'
+    except Exception as e:
+        return f'<div style="color:red">🎬 Video Error: {e}</div>'
 
 # ═══════════════════════════════════════════════════════════════════
 # 1. NAVBAR (Minimal & Sticky)
@@ -167,24 +167,51 @@ if btn and repo:
                     "embed":"🧠 Generating AI embeddings...","index":"📦 Indexing to Endee...",
                     "health":"🏥 Running health diagnostics...","genome":"📈 Building genome map...",
                     "done":"✅ Analysis complete!"}
-        keys = list(steps.keys()); bar = st.progress(0); status = st.empty()
-        def on(s): bar.progress(min(keys.index(s)/(len(keys)-1), 1.0)); status.markdown(f"**{steps[s]}**")
-        try:
-            R = run_pipeline(repo, on)
-            bar.progress(1.0); status.empty(); st.session_state.done = True
-            st.success(f"✓ Successfully analyzed **{st.session_state.name}**")
+        keys = list(steps.keys())
+        
+        with st.status("Initializing CodeDNA Analysis...", expanded=True) as status_box:
+            def on_step(s): 
+                pct = int(min(keys.index(s)/(len(keys)-1), 1.0) * 100)
+                status_box.update(label=f"[{pct}%] {steps[s]}", state="running")
             
-            # Show Metrics
-            rd = R["health"].to_dict()
-            col1, col2, col3, col4, col5 = st.columns(5)
-            col1.metric("Code Units", len(R["units"]))
-            col2.metric("Lines of Code", f"{R['loc']:,}")
-            col3.metric("Languages", len(R["lc"]))
-            col4.metric("Health Grade", rd["grade"])
-            col5.metric("Health Score", f"{rd['overall_score']}/100")
-            
-        except Exception as e:
-            bar.empty(); status.empty(); st.error(f"Analysis failed: {e}")
+            try:
+                R = run_pipeline(repo, on_step)
+                status_box.update(label="✅ Analysis Complete!", state="complete", expanded=False)
+                st.session_state.done = True
+                st.success(f"✓ Successfully analyzed **{st.session_state.name}**")
+                
+                # Show Metrics
+                rd = R["health"].to_dict()
+                col1, col2, col3, col4, col5 = st.columns(5)
+                col1.metric("Code Units", len(R["units"]))
+                col2.metric("Lines of Code", f"{R['loc']:,}")
+                col3.metric("Languages", len(R["lc"]))
+                col4.metric("Health Grade", rd["grade"])
+                col5.metric("Health Score", f"{rd['overall_score']}/100")
+                
+                st.markdown("<br/>", unsafe_allow_html=True)
+                t1, t2 = st.tabs(["🔍 Semantic Search Demo", "🏥 Health Diagnostics"])
+                
+                with t1:
+                    st.markdown("### Ask questions about the codebase")
+                    sq = st.text_input("Search query", placeholder="e.g. How is data saved?", key="sq_hero")
+                    if sq:
+                        res = st.session_state.srch.hybrid_search(sq, R["units"], top_k=3)
+                        for idx_r, r in enumerate(res):
+                            with st.expander(f"`{r.unit.name}` (Score: {r.score:.2f})"):
+                                st.code(r.unit.content, language=r.unit.language)
+                
+                with t2:
+                    st.markdown("### Anti-Pattern Detections")
+                    if not rd.get("issues"):
+                        st.success("No major issues detected!")
+                    else:
+                        for issue in rd["issues"]:
+                            st.warning(f"**{issue['type']}**: {issue['name']} ({issue['severity']})")
+                
+            except Exception as e:
+                status_box.update(label=f"❌ Analysis failed: {e}", state="error")
+                st.error(f"Analysis failed: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════
