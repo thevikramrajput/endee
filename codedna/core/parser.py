@@ -551,6 +551,8 @@ class CodeParser:
         self, directory: str, recursive: bool = True
     ) -> List[CodeUnit]:
         """Parse all supported files in a directory."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        
         all_units = []
         dir_path = Path(directory)
 
@@ -566,18 +568,24 @@ class CodeParser:
         }
 
         pattern = "**/*" if recursive else "*"
-        for file_path in dir_path.glob(pattern):
-            if file_path.is_file():
-                # Skip files in excluded directories
-                if any(part in skip_dirs for part in file_path.parts):
-                    continue
-                ext = file_path.suffix.lower()
-                if ext in config.SUPPORTED_LANGUAGES:
-                    units = self.parse_file(str(file_path))
+        valid_files = [
+            str(p) for p in dir_path.glob(pattern)
+            if p.is_file() 
+            and not any(part in skip_dirs for part in p.parts)
+            and p.suffix.lower() in config.SUPPORTED_LANGUAGES
+        ]
+        
+        with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as executor:
+            future_to_file = {executor.submit(self.parse_file, f): f for f in valid_files}
+            for future in as_completed(future_to_file):
+                try:
+                    units = future.result()
                     all_units.extend(units)
+                except Exception as e:
+                    logger.error(f"File parsing exception in threads: {e}")
 
         logger.info(
-            f"Total: Parsed {len(all_units)} code units from {directory}"
+            f"Total: Parsed {len(all_units)} code units from {directory} using {len(valid_files)} files"
         )
         return all_units
 

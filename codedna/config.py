@@ -67,7 +67,7 @@ HEALTH_SCORE_WEIGHTS = {
 APP_NAME = "CodeDNA"
 APP_VERSION = "1.0.0"
 APP_DESCRIPTION = "AI-Powered Codebase Genome Analyzer"
-BATCH_SIZE = 50  # Vectors to upsert per batch
+BATCH_SIZE = 500  # Vectors to upsert per batch (Optimized for speed)
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 # ─── Paths ──────────────────────────────────────────────────────────
