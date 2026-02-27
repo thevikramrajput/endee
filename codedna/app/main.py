@@ -352,7 +352,8 @@ with st.sidebar:
         from endee import Endee
         client = Endee()
         client.set_base_url(f"{endee_url}/api/v1")
-        indexes = client.list_indexes()
+        raw_indexes = client.list_indexes()
+        indexes = raw_indexes.get("indexes", []) if isinstance(raw_indexes, dict) else raw_indexes
         endee_connected = True
         st.markdown(
             f'<span class="status-connected">● Connected</span>',
@@ -911,7 +912,8 @@ elif page == "⚙️ About":
         from endee import Endee
         client = Endee()
         client.set_base_url(f"http://{config.ENDEE_HOST}:{config.ENDEE_PORT}/api/v1")
-        indexes = client.list_indexes()
+        raw_indexes = client.list_indexes()
+        indexes = raw_indexes.get("indexes", []) if isinstance(raw_indexes, dict) else raw_indexes
         if indexes:
             import pandas as pd
             idx_data = []

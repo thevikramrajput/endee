@@ -98,7 +98,9 @@ class EndeeIndexer:
     def _create_dense_index(self) -> bool:
         """Create the dense code functions index."""
         try:
-            existing = [idx["name"] for idx in self.client.list_indexes()]
+            raw = self.client.list_indexes()
+            index_list = raw.get("indexes", []) if isinstance(raw, dict) else raw
+            existing = [idx["name"] for idx in index_list if isinstance(idx, dict)]
             if config.DENSE_INDEX_NAME in existing:
                 logger.info(
                     f"Index '{config.DENSE_INDEX_NAME}' already exists, skipping."
@@ -124,7 +126,9 @@ class EndeeIndexer:
     def _create_hybrid_index(self) -> bool:
         """Create the hybrid (dense + sparse) index."""
         try:
-            existing = [idx["name"] for idx in self.client.list_indexes()]
+            raw = self.client.list_indexes()
+            index_list = raw.get("indexes", []) if isinstance(raw, dict) else raw
+            existing = [idx["name"] for idx in index_list if isinstance(idx, dict)]
             if config.HYBRID_INDEX_NAME in existing:
                 logger.info(
                     f"Index '{config.HYBRID_INDEX_NAME}' already exists, skipping."
@@ -137,11 +141,11 @@ class EndeeIndexer:
                 dimension=dim,
                 sparse_dim=config.HYBRID_SPARSE_DIM,
                 space_type=config.DENSE_SPACE_TYPE,
-                precision=Precision.INT8,  # Fastest for hybrid search
+                precision=Precision.FLOAT16,  # Compatible with hybrid dense+sparse
             )
             logger.info(
                 f"Created hybrid index '{config.HYBRID_INDEX_NAME}' "
-                f"(dense_dim={dim}, sparse_dim={config.HYBRID_SPARSE_DIM}, precision=INT8)"
+                f"(dense_dim={dim}, sparse_dim={config.HYBRID_SPARSE_DIM}, precision=FLOAT16)"
             )
             return True
         except Exception as e:
@@ -151,7 +155,9 @@ class EndeeIndexer:
     def _create_antipattern_index(self) -> bool:
         """Create the anti-pattern reference index."""
         try:
-            existing = [idx["name"] for idx in self.client.list_indexes()]
+            raw = self.client.list_indexes()
+            index_list = raw.get("indexes", []) if isinstance(raw, dict) else raw
+            existing = [idx["name"] for idx in index_list if isinstance(idx, dict)]
             if config.ANTIPATTERN_INDEX_NAME in existing:
                 logger.info(
                     f"Index '{config.ANTIPATTERN_INDEX_NAME}' already exists, skipping."
@@ -177,7 +183,10 @@ class EndeeIndexer:
     def list_indexes(self) -> List[Dict]:
         """List all existing indexes in Endee."""
         try:
-            return self.client.list_indexes()
+            raw = self.client.list_indexes()
+            if isinstance(raw, dict):
+                return raw.get("indexes", [])
+            return raw
         except Exception as e:
             logger.error(f"Failed to list indexes: {e}")
             return []
