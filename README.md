@@ -1,385 +1,576 @@
-# Endee: High-Performance Open Source Vector Database
+<div align="center">
 
-**Endee (nD)** is a specialized, high-performance vector database built for speed and efficiency. This guide covers supported platforms, dependency requirements, and detailed build instructions using both our automated installer and manual CMake configuration.
+# 🧬 CodeDNA — AI-Powered Codebase Genome Analyzer
 
-there are 3 ways to build and run endee:
-1. quick installation and run using install.sh and run.sh scripts
-2. manual build using cmake
-3. using docker
+### *Treat your codebase like DNA — analyze its genome, track its evolution, and diagnose its health.*
 
-also you can run endee using docker from docker hub without building it locally. refer to section 4 for more details.
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Endee](https://img.shields.io/badge/Endee-Vector_DB-6C5CE7?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PC9zdmc+&logoColor=white)](https://endee.io)
+[![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![License](https://img.shields.io/badge/License-Apache_2.0-green.svg?style=for-the-badge)](LICENSE)
 
----
+<br>
 
-## System Requirements
+<img src="https://img.shields.io/badge/Semantic_Search-✅-00B894?style=flat-square" alt="Semantic Search">
+<img src="https://img.shields.io/badge/Hybrid_Search-✅-6C5CE7?style=flat-square" alt="Hybrid Search">
+<img src="https://img.shields.io/badge/Health_Analysis-✅-E17055?style=flat-square" alt="Health Analysis">
+<img src="https://img.shields.io/badge/Evolution_Tracking-✅-0984E3?style=flat-square" alt="Evolution Tracking">
+<img src="https://img.shields.io/badge/Multi_Language-✅-FDCB6E?style=flat-square" alt="Multi-Language">
 
-Before installing, ensure your system meets the following hardware and operating system requirements.
-
-### Supported Operating Systems
-
-* **Linux**: Ubuntu(22.04, 24.04, 25.04) Debian(12, 13), Rocky(8, 9, 10), Centos(8, 9, 10), Fedora(40, 42, 43)
-* **macOS**: Apple Silicon (M Series) only.
-
-### Required Dependencies
-
-The following packages are required for compilation.
-
- `clang-19`, `cmake`, `build-essential`, `libssl-dev`, `libcurl4-openssl-dev`
-
-> **Note:** The build system requires **Clang 19** (or a compatible recent Clang version) supporting C++20.
+</div>
 
 ---
 
-## 1. Quick Installation (Recommended)
+## 📋 Table of Contents
 
-The easiest way to build **ndd** is using the included `install.sh` script. This script handles OS detection, dependency checks, and configuration automatically.
+- [Project Overview](#-project-overview)
+- [Problem Statement](#-problem-statement)
+- [Key Features](#-key-features)
+- [System Architecture](#-system-architecture)
+- [How Endee is Used](#-how-endee-is-used)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Setup & Installation](#-setup--installation)
+- [Usage Guide](#-usage-guide)
+- [Screenshots & Demo](#-screenshots--demo)
+- [Testing](#-testing)
+- [Technical Deep Dive](#-technical-deep-dive)
+- [Future Enhancements](#-future-enhancements)
+- [Contributing](#-contributing)
+- [License](#-license)
 
-### Usage
+---
 
-First, ensure the script is executable:
-```bash
-chmod +x ./install.sh
+## 🎯 Project Overview
+
+**CodeDNA** is an AI-powered **codebase genome analyzer** that maps source code into high-dimensional vector spaces using the **[Endee vector database](https://github.com/endee-io/endee)**. It treats codebases like biological organisms — analyzing their "DNA" (code structure, patterns, dependencies), diagnosing their "health" (anti-patterns, code smells), and tracking their "evolution" (architectural changes over time).
+
+Unlike simple keyword search tools (grep, GitHub search), CodeDNA understands the **semantic meaning** of code. It can find functionally similar code across different programming languages, detect code that resembles known anti-patterns, and visualize the architectural "genome" of an entire codebase.
+
+### What Makes This Different?
+
+| Traditional Tools | CodeDNA |
+|---|---|
+| Keyword-based search | **Semantic** search using vector embeddings |
+| Single language only | **Cross-language** similarity detection |
+| No quality analysis | **AI-powered** health diagnostics |
+| Static snapshots | **Evolution tracking** with vector drift |
+| Basic text matching | **Hybrid search** (dense + sparse vectors) |
+
+---
+
+## 🧩 Problem Statement
+
+Software developers spend approximately **30% of their time** understanding existing code before they can modify it ([IEEE Study](https://ieeexplore.ieee.org)). Current code search tools rely on exact keyword matching, which fails to capture the *intent* and *semantics* of code. This leads to:
+
+1. **Redundant code** — Developers write new code for problems already solved elsewhere in the codebase
+2. **Hidden anti-patterns** — Code smells grow undetected until they cause bugs
+3. **Architecture drift** — Codebases slowly degrade without visibility into structural changes
+4. **Cross-language blindness** — No way to find similar implementations across different languages
+
+**CodeDNA solves all four problems** by leveraging Endee's high-performance vector search to _understand code by meaning, not by text_.
+
+---
+
+## ✨ Key Features
+
+### 1. 🔍 Multi-Modal Semantic Code Search
+Search codebases by meaning using natural language or pasting code snippets.
+
+```
+Query: "function that validates email addresses using regex"
+→ Finds all email validation functions across Python, JavaScript, and Java
 ```
 
-Run the script from the root of the repository. You **must** provide arguments for the build mode and/or CPU optimization.
+**Endee Features Used:** Dense index, cosine similarity, `$eq` filter for language
 
-```bash
-./install.sh [BUILD_MODE] [CPU_OPTIMIZATION]
+### 2. 🧪 Hybrid Search (Dense + Sparse)
+Combines semantic understanding (dense vectors) with keyword precision (sparse TF-IDF vectors) for the best possible retrieval quality.
+
+```
+Query: "async request handler middleware express"
+→ Dense: understands "request handler middleware" semantically
+→ Sparse: boosts results containing exact keywords "async", "express"
+→ Combined: best of both worlds
 ```
 
-### Build Arguments
+**Endee Features Used:** Hybrid index, `sparse_dim`, combined query mode
 
-You can combine one **Build Mode** and one **CPU Optimization** flag.
+### 3. 🏥 Codebase Health Diagnostics
+Compares every function in your codebase against a vector database of 10+ known anti-patterns:
 
-#### Build Modes
+| Anti-Pattern | Severity | Detection Method |
+|---|---|---|
+| God Class | 🔴 High | Vector similarity to known God Class patterns |
+| Deep Nesting | 🔴 High | Structural similarity + complexity heuristics |
+| Callback Hell | 🔴 High | Pattern matching against callback chains |
+| Magic Numbers | 🟡 Low | Similarity to hardcoded value patterns |
+| Copy-Paste Code | 🟡 Medium | Cross-function vector similarity |
+| Hardcoded Credentials | 🔴 Critical | Pattern detection for secrets |
+| ...and more | | |
 
-| Flag | Description | CMake Equivalent |
-| --- | --- | --- |
-| `--release` | **Default.** Optimized release build. |  |
-| `--debug_all` | Enables full debugging symbols. | `-DND_DEBUG=ON -DDEBUG=ON` |
-| `--debug_nd` | Enables NDD-specific logging/timing. | `-DND_DEBUG=ON` |
+**Endee Features Used:** Anti-pattern index (FLOAT32 precision), similarity threshold queries
 
-#### CPU Optimization Options
+### 4. 📈 Architecture Evolution Tracking
+Track how your codebase's vector "genome" changes over time:
 
-Select the flag matching your hardware to enable SIMD optimizations.
+- **Centroid Drift** — How much the average code semantics shift between versions
+- **Spread Analysis** — Whether code is becoming more diverse or converging
+- **Complexity Trends** — Track growing or shrinking complexity
+- **Genome Maps** — t-SNE/UMAP 2D projections showing code clusters
 
-| Flag | Description | Target Hardware |
-| --- | --- | --- |
-| `--avx2` | Enables AVX2 (FMA, F16C) | Modern x86_64 Intel/AMD |
-| `--avx512` | Enables AVX512 (F, BW, VNNI, FP16) | Server-grade x86_64 (Xeon/Epyc) |
-| `--neon` | Enables NEON (FP16, DotProd) | Apple Silicon / ARMv8.2+ |
-| `--sve2` | Enables SVE2 (INT8/16, FP16) | ARMv9 / SVE2 compatible |
+**Endee Features Used:** Multiple snapshots, vector comparison, centroid computation
 
-> **Note:** The `--avx512` build configuration enforces mandatory runtime checks for specific instruction sets. To successfully run this build, your CPU must support **`avx512` (Foundation), `avx512_fp16`, `avx512_vnni`, `avx512bw`, and `avx512_vpopcntdq`**; if any of these extensions are missing, the database will fail to initialize and exit immediately to avoid runtime crashes.
+### 5. 🌐 Cross-Language Code Intelligence
+Find semantically equivalent code across Python, JavaScript, and Java:
 
-
-### Example Commands
-
-**Build for Production (Intel/AMD with AVX2):**
-
-```bash
-./install.sh --release --avx2
+```python
+# Python: "sort a list of numbers"
+def bubble_sort(arr):
+    for i in range(len(arr)):
+        for j in range(0, len(arr)-i-1):
+            if arr[j] > arr[j+1]:
+                arr[j], arr[j+1] = arr[j+1], arr[j]
 ```
 
-**Example Build for Debugging (Apple Silicon):**
+→ Also finds equivalent JavaScript and Java implementations!
 
-```bash
-./install.sh --debug_all --neon
+**Endee Features Used:** Dense index with `$eq` language filter, cross-language query
+
+---
+
+## 🏗️ System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Streamlit Dashboard (UI)                      │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
+│  │  Semantic    │ │   Health    │ │  Evolution  │ │ Settings  │ │
+│  │  Search     │ │  Analysis   │ │   Tracker   │ │  & Index  │ │
+│  └──────┬──────┘ └──────┬──────┘ └──────┬──────┘ └─────┬─────┘ │
+└─────────┼───────────────┼───────────────┼───────────────┼───────┘
+          │               │               │               │
+┌─────────▼───────────────▼───────────────▼───────────────▼───────┐
+│                 CodeDNA Core Engine (Python)                     │
+│                                                                  │
+│  ┌────────────┐  ┌────────────┐  ┌──────────────┐               │
+│  │ AST Parser │  │  Embedder  │  │   Sparse     │               │
+│  │ (Python,   │  │ (Sentence  │  │  Vector Gen  │               │
+│  │  JS, Java) │  │ Transformer│  │  (TF-IDF)    │               │
+│  └─────┬──────┘  └─────┬──────┘  └──────┬───────┘               │
+│        │               │                │                        │
+│  ┌─────▼───────────────▼────────────────▼─────────┐             │
+│  │              Indexer (Endee Client)             │             │
+│  │  • Dense Index    (FLOAT16, cosine, dim=384)    │             │
+│  │  • Hybrid Index   (INT8, dense+sparse)          │             │
+│  │  • Anti-Pattern   (FLOAT32, high accuracy)      │             │
+│  └─────────────────────┬──────────────────────────┘             │
+│                        │                                         │
+│  ┌─────────────────────▼──────────────────────────┐             │
+│  │         Searcher / Analyzer / Tracker           │             │
+│  └────────────────────────────────────────────────┘             │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │    Endee    │
+                    │   Vector    │
+                    │  Database   │
+                    │  (Docker)   │
+                    │  Port 8080  │
+                    └─────────────┘
 ```
 
-### Running the Server
+### Data Flow
 
-We provide a `run.sh` script to simplify running the server. It automatically detects the built binary and uses `ndd_data_dir=./data` by default.
-
-First, ensure the script is executable:
-
-```bash
-chmod +x ./run.sh
 ```
-
-Then run the script:
-
-```bash
-./run.sh
-```
-
-This will automatically identify the latest binary and start the server.
-
-#### Options
-
-You can override the defaults using arguments:
-
-*   `ndd_data_dir=DIR`: Set the data directory.
-*   `binary_file=FILE`: Set the binary file to run.
-*   `ndd_auth_token=TOKEN`: Set the authentication token (leave empty/ignore to run without authentication).
-
-#### Examples
-
-**Run with custom data directory:**
-
-```bash
-./run.sh ndd_data_dir=./my_data
-```
-
-**Run specific binary:**
-
-```bash
-./run.sh binary_file=./build/ndd-avx2
-```
-
-**Run with authentication token:**
-
-```bash
-./run.sh ndd_auth_token=your_token
-```
-
-
-**Run with all options**
-
-```bash
-./run.sh ndd_data_dir=./my_data binary_file=./build/ndd-avx2 ndd_auth_token=your_token
-```
-
-**For Help**
-
-```bash
-./run.sh --help
-```
-
-
-## 2. Manual Build (Advanced)
-
-If you prefer to configure the build manually or integrate it into an existing install pipeline, you can use `cmake` directly.
-
-### Step 1: Prepare Build Directory
-
-```bash
-mkdir build && cd build
-```
-
-### Step 2: Configure
-
-Run `cmake` with the appropriate flags. You must manually define the compiler if it is not your system default.
-
-**Configuration Flags:**
-
-* **Debug Options:**
-* `-DDEBUG=ON` (Enable debug symbols/O0)
-* `-DND_DEBUG=ON` (Enable internal logging)
-
-
-* **SIMD Selectors (Choose One):**
-* `-DUSE_AVX2=ON`
-* `-DUSE_AVX512=ON`
-* `-DUSE_NEON=ON`
-* `-DUSE_SVE2=ON`
-
-
-**Example (x86_64 AVX512 Release):**
-
-```bash
-cmake -DCMAKE_BUILD_TYPE=Release \
-      -DUSE_AVX512=ON \
-      ..
-```
-
-### Step 3: Compile
-
-```bash
-make -j$(nproc)
-```
-
-### Running the Built Binary
-
-After a successful build, the binary will be generated in the `build/` directory.
-
-### Binary Naming
-
-The output binary name depends on the SIMD flag used during compilation:
-
-* `ndd-avx2`
-* `ndd-avx512`
-* `ndd-neon` (or `ndd-neon-darwin` for mac)
-* `ndd-sve2`
-
-A symlink called `ndd` links to the binary compiled for the current build.
-
-### Runtime Environment Variables
-
-Some environment variables **ndd** reads at runtime:
-
-* `NDD_DATA_DIR`: Defines the data directory
-* `NDD_AUTH_TOKEN`: Optional authentication token (see below)
-
-### Authentication
-
-**ndd** supports two authentication modes:
-
-**Open Mode (No Authentication)** - Default when `NDD_AUTH_TOKEN` is not set:
-```bash
-# All APIs work without authentication
-./build/ndd
-curl http://{{BASE_URL}}/api/v1/index/list
-```
-
-**Token Mode** - When `NDD_AUTH_TOKEN` is set:
-```bash
-# Generate a secure token
-export NDD_AUTH_TOKEN=$(openssl rand -hex 32)
-./build/ndd
-
-# All protected APIs require the token in Authorization header
-curl -H "Authorization: $NDD_AUTH_TOKEN" http://{{BASE_URL}}/api/v1/index/list
-```
-
-### Execution Example
-
-To run the database using the AVX2 binary and a local `data` folder:
-
-```bash
-# 1. Create the data directory
-mkdir -p ./data
-
-# 2. Export the environment variable and run
-export NDD_DATA_DIR=$(pwd)/data
-./build/ndd
-```
-
-Alternatively, as a single line:
-
-```bash
-NDD_DATA_DIR=./data ./build/ndd
+Source Code → AST Parsing → Code Units → Embeddings → Endee Indexes
+                                            │
+User Query → Query Embedding ──────────────→ Endee Search → Results
+                                                    ↑
+                         Advanced Filters ($eq, $in, $range)
 ```
 
 ---
 
+## 🔋 How Endee is Used
 
+CodeDNA creates **3 specialized indexes** in Endee, each showcasing different capabilities:
 
-## 3. Docker Deployment
+### Index 1: `code_functions` — Dense Index
+```python
+from endee import Endee, Precision
 
-We provide a Dockerfile for easy containerization. This ensures a consistent runtime environment and simplifies the deployment process across various platforms.
-
-### Build the Image
-
-You **must** specify the target architecture (`avx2`, `avx512`, `neon`, `sve2`) using the `BUILD_ARCH` build argument. You can optionally enable a debug build using the `DEBUG` argument.
-
-```bash
-# Production Build (AVX2) (for x86_64 systems)
-docker build --ulimit nofile=100000:100000 --build-arg BUILD_ARCH=avx2 -t endee-oss:latest -f ./infra/Dockerfile .
-
-# Debug Build (Neon) (for arm64, mac apple silicon)
-docker build --ulimit nofile=100000:100000 --build-arg BUILD_ARCH=neon --build-arg DEBUG=true -t endee-oss:latest -f ./infra/Dockerfile .
+client = Endee()
+client.create_index(
+    name="code_functions",
+    dimension=384,              # all-MiniLM-L6-v2 embedding dim
+    space_type="cosine",        # Cosine similarity for code
+    precision=Precision.FLOAT16 # Balance of speed & accuracy
+)
 ```
+**Purpose:** Function-level semantic code search
+**Precision:** FLOAT16 (good balance)
+**Use Case:** "Find all functions that handle user authentication"
 
-### Run the Container
-
-The container exposes port `8080` and stores data in `/data` inside container. You should persist this data using a docker volume.
-
-```bash
-docker run \
-  -p 8080:8080 \
-  -v endee-data:/data \
-  -e NDD_AUTH_TOKEN="your_secure_token" \
-  --name endee-server \
-  endee-oss:latest
+### Index 2: `code_hybrid` — Hybrid Index (Dense + Sparse)
+```python
+client.create_index(
+    name="code_hybrid",
+    dimension=384,              # Dense vector dimension
+    sparse_dim=30000,           # TF-IDF vocabulary size
+    space_type="cosine",
+    precision=Precision.INT8    # Fastest for hybrid queries
+)
 ```
+**Purpose:** Combined semantic + keyword search for best retrieval
+**Precision:** INT8 (fastest)
+**Use Case:** "Find async middleware for Express.js with error handling"
 
-leave `NDD_AUTH_TOKEN` empty or remove it to run endee without authentication.
+### Index 3: `anti_patterns` — Pattern Reference Index
+```python
+client.create_index(
+    name="anti_patterns",
+    dimension=384,
+    space_type="cosine",
+    precision=Precision.FLOAT32  # Highest accuracy for pattern matching
+)
+```
+**Purpose:** Code health diagnostics against known anti-patterns
+**Precision:** FLOAT32 (highest accuracy)
+**Use Case:** "Does this function resemble a God Class pattern?"
 
-### Alternatively: Docker Compose
+### Endee Features Demonstrated
 
-You can also use `docker-compose` to run the service.
-
-1. Start the container:
-   ```bash
-   docker-compose up
-   ```
+| Feature | How It's Used | File |
+|---|---|---|
+| Dense Index | Function-level semantic search | `core/indexer.py` |
+| Hybrid Index | Dense + sparse combined search | `core/indexer.py` |
+| `Precision.FLOAT16` | Balanced precision for code index | `core/indexer.py` |
+| `Precision.INT8` | Fast hybrid queries | `core/indexer.py` |
+| `Precision.FLOAT32` | High-accuracy anti-pattern matching | `core/indexer.py` |
+| `$eq` filter | Filter by language, unit type | `core/searcher.py` |
+| `$range` filter | Filter by complexity, LOC range | `core/searcher.py` |
+| Bulk upsert | Batch indexing with metadata | `core/indexer.py` |
+| Metadata storage | Code unit properties (LOC, complexity) | `core/parser.py` |
+| Filter storage | Searchable filter fields | `core/parser.py` |
+| Hybrid query | Dense + sparse combined query | `core/searcher.py` |
+| Dense-only query | Semantic similarity search | `core/searcher.py` |
+| Multiple indexes | 3 indexes for different use cases | `core/indexer.py` |
+| Docker deployment | `docker-compose.yml` for Endee | `docker-compose.yml` |
+| Python SDK | `pip install endee` | All core modules |
 
 ---
 
-## 4. Running Docker container from registry
+## 🛠️ Tech Stack
 
-You can run Endee directly using the pre-built image from Docker Hub without building locally.
+| Component | Technology | Purpose |
+|---|---|---|
+| **Vector Database** | [Endee](https://github.com/endee-io/endee) | High-performance vector storage & search |
+| **Backend** | Python 3.10+ | Core engine and pipeline |
+| **Embeddings** | sentence-transformers (all-MiniLM-L6-v2) | Dense vector generation for code |
+| **Sparse Vectors** | scikit-learn TF-IDF | Sparse keyword-based vectors |
+| **Code Parsing** | Python `ast` module + regex | Multi-language AST extraction |
+| **Frontend** | Streamlit | Interactive web dashboard |
+| **Visualization** | Plotly, t-SNE/UMAP | Code genome visualization |
+| **Containerization** | Docker Compose | Endee deployment |
+| **CLI** | Rich, Click | Beautiful terminal output |
+| **Testing** | pytest | Comprehensive test suite |
 
-### Using Docker Compose
+---
 
-Create a new directory for Endee:
+## 📁 Project Structure
 
-```bash
-mkdir endee && cd endee
+```
+endee/                              # Forked Endee repository (base)
+├── codedna/                        # 🧬 CodeDNA project directory
+│   ├── docker-compose.yml          # Endee server deployment
+│   ├── requirements.txt            # Python dependencies
+│   ├── config.py                   # Central configuration
+│   ├── .env.example                # Environment variable template
+│   │
+│   ├── core/                       # 🔧 Core engine modules
+│   │   ├── __init__.py
+│   │   ├── parser.py               # Multi-language AST parser
+│   │   ├── embedder.py             # Dense embedding pipeline
+│   │   ├── sparse.py               # Sparse vector generation (TF-IDF)
+│   │   ├── indexer.py              # Endee index management & upserting
+│   │   ├── searcher.py             # Semantic search engine
+│   │   ├── analyzer.py             # Code health diagnostics
+│   │   └── evolution.py            # Architecture evolution tracking
+│   │
+│   ├── patterns/                   # 📊 Anti-pattern database
+│   │   └── anti_patterns.json      # 10+ curated code anti-patterns
+│   │
+│   ├── app/                        # 🖥️ Streamlit dashboard
+│   │   └── main.py                 # 5-page interactive web app
+│   │
+│   ├── scripts/                    # 🔨 CLI tools
+│   │   ├── ingest_repo.py          # Repository ingestion pipeline
+│   │   └── seed_patterns.py        # Anti-pattern seeding script
+│   │
+│   └── tests/                      # ✅ Test suite
+│       ├── test_parser.py          # Parser tests (Python, JS, Java)
+│       └── test_embedder.py        # Embedding & sparse vector tests
+│
+├── README.md                       # This file
+├── docs/                           # Endee documentation
+├── src/                            # Endee source code
+├── install.sh                      # Endee build script
+├── run.sh                          # Endee run script
+└── docker-compose.yml              # Endee Docker config
 ```
 
-Inside this directory, create a file named `docker-compose.yml` and copy the following content into it:
+---
 
-```yaml
-services:
-  endee:
-    image: endeeio/endee-server:latest
-    container_name: endee-server
-    ports:
-      - "8080:8080"
-    environment:
-      NDD_NUM_THREADS: 0
-      NDD_AUTH_TOKEN: ""  # Optional: set for authentication
-    volumes:
-      - endee-data:/data
-    restart: unless-stopped
+## 🚀 Setup & Installation
 
-volumes:
-  endee-data:
+### Prerequisites
+
+| Requirement | Version | Purpose |
+|---|---|---|
+| Docker & Docker Compose | Latest | Running Endee vector database |
+| Python | 3.10+ | Core engine and dashboard |
+| Git | Latest | Repository cloning |
+| 4GB+ RAM | - | Embedding model loading |
+
+### Step 1: Clone the Forked Repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/endee.git
+cd endee
 ```
 
-Then run:
+### Step 2: Start Endee Vector Database
+
 ```bash
+cd codedna
 docker compose up -d
 ```
 
-for more details visit [docs.endee.io](https://docs.endee.io/quick-start)
+Verify Endee is running:
+```bash
+curl http://localhost:8080/api/v1/index/list
+# Expected: [] (empty list)
+```
+
+### Step 3: Install Python Dependencies
+
+```bash
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# OR
+.\venv\Scripts\activate   # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Step 4: Configure Environment
+
+```bash
+cp .env.example .env
+# Edit .env if Endee runs on a different host/port
+```
+
+### Step 5: Seed Anti-Patterns Database
+
+```bash
+python scripts/seed_patterns.py
+```
+
+### Step 6: Ingest a Repository
+
+```bash
+# Ingest a GitHub repository
+python scripts/ingest_repo.py --repo https://github.com/pallets/flask
+
+# OR ingest a local directory
+python scripts/ingest_repo.py --path /path/to/your/project --label v1.0
+```
+
+### Step 7: Launch the Dashboard
+
+```bash
+streamlit run app/main.py
+```
+
+Open your browser to **http://localhost:8501** 🎉
 
 ---
 
-## Contribution
+## 📖 Usage Guide
 
-We welcome contributions from the community to help make vector search faster and more accessible for everyone. To contribute:
+### Semantic Code Search
 
-* **Submit Pull Requests**: Have a fix or a new feature? Fork the repo, create a branch, and send a PR.
-* **Report Issues**: Found a bug or a performance bottleneck? Open an issue on GitHub with steps to reproduce it.
-* **Suggest Improvements**: We are always looking to optimize performance; feel free to suggest new CPU target optimizations or architectural enhancements.
-* **Feature Requests**: If there is a specific functionality you need, start a discussion in the issues section.
+1. Navigate to **🔍 Semantic Search** in the sidebar
+2. Choose search mode:
+   - **Dense** — Pure semantic search (best for natural language queries)
+   - **Hybrid** — Combined dense + sparse (best for mixed queries)
+   - **Find Similar** — Paste code to find similar implementations
+3. Enter your query and apply filters
+4. Click **🚀 Search**
+
+**Example Queries:**
+```
+"function that reads a CSV file and returns a dataframe"
+"authentication middleware with JWT token validation"
+"database connection pool with retry logic"
+"recursive tree traversal algorithm"
+```
+
+### Health Analysis
+
+1. Navigate to **🏥 Health Analysis**
+2. Enter the path to a local repository
+3. Click **🔬 Analyze Codebase**
+4. Review:
+   - Overall health score (0-100) and letter grade
+   - Violation breakdown by severity
+   - Individual violation details with suggestions
+
+### Evolution Tracking
+
+1. Navigate to **📈 Evolution**
+2. Enter a repository path
+3. Click **🧬 Generate Evolution Map**
+4. Explore:
+   - 2D genome map (t-SNE projection of code vectors)
+   - Language distribution pie chart
+   - Code unit type histogram
+
+### CLI Usage
+
+```bash
+# Full ingestion with health analysis
+python scripts/ingest_repo.py --repo https://github.com/user/repo --label v2.0
+
+# Skip health analysis (faster)
+python scripts/ingest_repo.py --path ./my-project --no-health
+
+# Seed anti-patterns only
+python scripts/seed_patterns.py
+```
 
 ---
 
-## License
+## 🧪 Testing
 
-Endee is open source software licensed under the
-**Apache License 2.0**.
+Run the test suite:
 
-You are free to use, modify, and distribute this software for
-personal, commercial, and production use.
+```bash
+cd codedna
 
-See the LICENSE file for full license terms.
+# Run all tests
+pytest tests/ -v
+
+# Run specific test modules
+pytest tests/test_parser.py -v
+pytest tests/test_embedder.py -v
+
+# Run with coverage
+pytest tests/ -v --cov=core --cov-report=html
+```
+
+### Test Coverage
+
+| Module | Tests | Coverage Areas |
+|---|---|---|
+| `parser.py` | 10+ tests | Python/JS/Java parsing, metadata, edge cases |
+| `embedder.py` | 5+ tests | Dimension checks, batch embedding, similarity |
+| `sparse.py` | 3+ tests | TF-IDF generation, hash-based fallback, tokenization |
 
 ---
 
-## Trademark and Branding
+## 🔬 Technical Deep Dive
 
-“Endee” and the Endee logo are trademarks of Endee Labs.
+### Embedding Pipeline
 
-The Apache License 2.0 does **not** grant permission to use the Endee name,
-logos, or branding in a way that suggests endorsement or affiliation.
+```
+Raw Code → Code Tokenization → Rich Text Preparation → Sentence Transformer → 384-dim Vector
+```
 
-If you offer a hosted or managed service based on this software, you must:
-- Use your own branding
-- Avoid implying it is an official Endee service
+The embedder creates a **rich text representation** combining:
+1. Unit type and name ("function: calculate_fibonacci")
+2. Language context ("language: python")
+3. Docstring ("description: Calculate the nth Fibonacci number")
+4. Parameters ("parameters: n")
+5. Actual code body (truncated to 2048 chars)
 
-For trademark or branding permissions, contact: enterprise@endee.io
+This approach ensures the embedding captures both **intent** (from name + docstring) and **implementation** (from code), enabling true semantic search.
+
+### Sparse Vector Generation
+
+```
+Raw Code → Comment/String Removal → camelCase/snake_case Splitting → TF-IDF → Sparse Vector
+```
+
+The custom `CodeTokenizer`:
+- Removes comments, string literals, numeric literals
+- Splits camelCase (`getUserById` → `get user by id`)
+- Splits snake_case (`get_user_by_id` → `get user by id`)
+- Preserves programming keywords
+- Generates TF-IDF sparse vectors with 30,000 dimensions
+
+### Health Scoring Algorithm
+
+```
+Overall Score = (0.35 × pattern_score) + (0.30 × complexity_score) +
+                (0.15 × documentation_score) + (0.20 × duplication_score)
+```
+
+| Grade | Score Range |
+|---|---|
+| A | 90-100 |
+| B | 80-89 |
+| C | 70-79 |
+| D | 60-69 |
+| F | 0-59 |
 
 ---
 
-## Third-Party Software
+## 🔮 Future Enhancements
 
-This project includes or depends on third-party software components that are
-licensed under their respective open source licenses.
+- [ ] **Real-time Git Hook Integration** — Auto-index on every commit
+- [ ] **LLM-Powered Code Explanations** — Use GPT-4/Ollama to explain search results
+- [ ] **Code Transplant Recommendations** — Suggest open-source solutions for similar problems
+- [ ] **Dependency Graph Visualization** — Network graph of code dependencies
+- [ ] **CI/CD Integration** — Health score as a CI quality gate
+- [ ] **VSCode Extension** — Semantic search directly from your editor
+- [ ] **Multi-Repository Analysis** — Compare codebases across repos
 
-Use of those components is governed by the terms and conditions of their
-individual licenses, not by the Apache License 2.0 for this project.
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is built on top of the [Endee](https://github.com/endee-io/endee) vector database, which is licensed under the Apache License 2.0.
+
+The CodeDNA application code is also available under the Apache License 2.0. See [LICENSE](LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- [**Endee.io**](https://endee.io) — High-performance vector database powering CodeDNA
+- [**Sentence Transformers**](https://www.sbert.net/) — State-of-the-art text embeddings
+- [**Streamlit**](https://streamlit.io) — Rapid web app framework
+- [**Plotly**](https://plotly.com) — Interactive visualization library
+
+---
+
+<div align="center">
+
+**Built with 🧬 by CodeDNA Team | Powered by [Endee](https://endee.io)**
+
+</div>

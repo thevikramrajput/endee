@@ -1,32 +1,49 @@
-
-# Ignore build directory
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
 build/
-# Ignore build like directory
-build*/
-# Ignore all files in the build directory
-build/*
+eggs/
+*.egg
+.eggs/
+*.whl
 
-# Ignore tests build directory
-tests/build/
-tests/build*/
+# Virtual environments
+venv/
+.venv/
+env/
+.env
 
-# Test binaries
-tests/**/ndd_filter_test
-
-# macOS debug symbols
-*.dSYM/
-
-# Sometimes data files are created for tetsing
-data/
-data/*
-
-# VS Code directory
+# IDE
 .vscode/
-.vscode/*
+.idea/
+*.swp
+*.swo
+*~
 
-# Frontend
-frontend/
-frontend/*
-
-# DS Store
+# OS
 .DS_Store
+Thumbs.db
+
+# Endee data
+data/
+
+# CodeDNA
+codedna/.cache/
+codedna/.env
+*.log
+
+# Model cache
+.cache/
+models/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Test
+.pytest_cache/
+htmlcov/
+.coverage

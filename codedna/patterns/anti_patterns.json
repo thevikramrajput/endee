@@ -1,0 +1,82 @@
+[
+  {
+    "id": "ap_god_class",
+    "name": "God Class",
+    "category": "design",
+    "severity": "high",
+    "description": "A class that does too much — has too many responsibilities, methods, and lines of code. Violates Single Responsibility Principle.",
+    "code": "class ApplicationManager:\n    def __init__(self):\n        self.db = Database()\n        self.cache = Cache()\n        self.logger = Logger()\n        self.auth = Auth()\n        self.email = EmailService()\n        self.payment = PaymentGateway()\n    \n    def handle_user_login(self, username, password):\n        user = self.db.find_user(username)\n        if self.auth.verify(user, password):\n            self.cache.set_session(user)\n            self.logger.log('login', user)\n            self.email.send_welcome(user)\n            return True\n        return False\n    \n    def process_payment(self, user, amount):\n        result = self.payment.charge(user, amount)\n        self.db.save_transaction(result)\n        self.email.send_receipt(user, result)\n        self.logger.log('payment', result)\n        return result\n    \n    def generate_report(self, report_type):\n        data = self.db.query_all()\n        processed = self._transform_data(data)\n        formatted = self._format_report(processed, report_type)\n        self.email.send_report(formatted)\n        return formatted"
+  },
+  {
+    "id": "ap_long_method",
+    "name": "Long Method",
+    "category": "complexity",
+    "severity": "medium",
+    "description": "A method that is excessively long and does too many things. Should be broken down into smaller, focused methods.",
+    "code": "def process_order(order_data):\n    # Validate input\n    if not order_data.get('items'):\n        raise ValueError('No items')\n    if not order_data.get('user_id'):\n        raise ValueError('No user')\n    if not order_data.get('payment'):\n        raise ValueError('No payment')\n    \n    # Calculate totals\n    subtotal = 0\n    for item in order_data['items']:\n        price = get_price(item['id'])\n        quantity = item['quantity']\n        subtotal += price * quantity\n    \n    # Apply discounts\n    discount = 0\n    if order_data.get('coupon'):\n        coupon = validate_coupon(order_data['coupon'])\n        if coupon:\n            discount = subtotal * coupon['percentage'] / 100\n    \n    # Calculate tax\n    tax_rate = get_tax_rate(order_data.get('state', 'CA'))\n    tax = (subtotal - discount) * tax_rate\n    total = subtotal - discount + tax\n    \n    # Process payment\n    payment_result = charge_card(order_data['payment'], total)\n    if not payment_result['success']:\n        raise PaymentError(payment_result['error'])\n    \n    # Create order record\n    order = create_order_record(order_data, total, payment_result)\n    \n    # Update inventory\n    for item in order_data['items']:\n        update_inventory(item['id'], -item['quantity'])\n    \n    # Send notifications\n    send_order_confirmation(order_data['user_id'], order)\n    notify_warehouse(order)\n    update_analytics(order)\n    \n    return order"
+  },
+  {
+    "id": "ap_deep_nesting",
+    "name": "Deep Nesting",
+    "category": "complexity",
+    "severity": "high",
+    "description": "Code with excessive levels of nesting (more than 3-4 levels), making it hard to read and maintain.",
+    "code": "def process_data(data):\n    if data:\n        for item in data:\n            if item.get('active'):\n                for sub_item in item.get('children', []):\n                    if sub_item.get('type') == 'valid':\n                        for detail in sub_item.get('details', []):\n                            if detail.get('status') == 'pending':\n                                if detail.get('priority') > 5:\n                                    if detail.get('assigned'):\n                                        process_high_priority(detail)\n                                    else:\n                                        assign_and_process(detail)\n                                else:\n                                    queue_for_later(detail)"
+  },
+  {
+    "id": "ap_magic_numbers",
+    "name": "Magic Numbers",
+    "category": "readability",
+    "severity": "low",
+    "description": "Using hardcoded numeric values without explanation. Should use named constants.",
+    "code": "def calculate_shipping(weight, distance):\n    if weight < 2.5:\n        base_cost = 5.99\n    elif weight < 10:\n        base_cost = 12.99\n    elif weight < 25:\n        base_cost = 24.99\n    else:\n        base_cost = 49.99\n    \n    if distance > 500:\n        base_cost *= 1.5\n    if distance > 1000:\n        base_cost *= 2.0\n    \n    if weight > 50:\n        base_cost += 15.00\n    \n    return round(base_cost * 1.08, 2)"
+  },
+  {
+    "id": "ap_callback_hell",
+    "name": "Callback Hell",
+    "category": "async",
+    "severity": "high",
+    "description": "Deeply nested callbacks making code hard to read, debug, and maintain. Use async/await or promises instead.",
+    "code": "function fetchUserData(userId, callback) {\n    getUser(userId, function(err, user) {\n        if (err) { callback(err); return; }\n        getOrders(user.id, function(err, orders) {\n            if (err) { callback(err); return; }\n            getPayments(orders[0].id, function(err, payments) {\n                if (err) { callback(err); return; }\n                getShipping(payments[0].id, function(err, shipping) {\n                    if (err) { callback(err); return; }\n                    callback(null, { user, orders, payments, shipping });\n                });\n            });\n        });\n    });\n}"
+  },
+  {
+    "id": "ap_copy_paste",
+    "name": "Copy-Paste Programming",
+    "category": "duplication",
+    "severity": "medium",
+    "description": "Duplicated code blocks with minor variations. Should be refactored into a reusable function.",
+    "code": "def save_user(user_data):\n    conn = get_connection()\n    cursor = conn.cursor()\n    try:\n        cursor.execute('INSERT INTO users VALUES (?, ?, ?)', \n                       (user_data['name'], user_data['email'], user_data['age']))\n        conn.commit()\n    except Exception as e:\n        conn.rollback()\n        raise e\n    finally:\n        cursor.close()\n        conn.close()\n\ndef save_order(order_data):\n    conn = get_connection()\n    cursor = conn.cursor()\n    try:\n        cursor.execute('INSERT INTO orders VALUES (?, ?, ?)', \n                       (order_data['user_id'], order_data['product'], order_data['amount']))\n        conn.commit()\n    except Exception as e:\n        conn.rollback()\n        raise e\n    finally:\n        cursor.close()\n        conn.close()\n\ndef save_product(product_data):\n    conn = get_connection()\n    cursor = conn.cursor()\n    try:\n        cursor.execute('INSERT INTO products VALUES (?, ?, ?)', \n                       (product_data['name'], product_data['price'], product_data['stock']))\n        conn.commit()\n    except Exception as e:\n        conn.rollback()\n        raise e\n    finally:\n        cursor.close()\n        conn.close()"
+  },
+  {
+    "id": "ap_bare_except",
+    "name": "Bare Except / Pokemon Exception Handling",
+    "category": "error_handling",
+    "severity": "high",
+    "description": "Catching all exceptions without specificity, potentially hiding bugs.",
+    "code": "def risky_operation(data):\n    try:\n        result = process(data)\n        save_to_db(result)\n        send_notification(result)\n        return result\n    except:\n        pass\n\ndef another_risky(x):\n    try:\n        return int(x) / len(x)\n    except Exception:\n        return None\n\ndef silent_failure(path):\n    try:\n        with open(path) as f:\n            data = json.load(f)\n        return data\n    except:\n        return {}"
+  },
+  {
+    "id": "ap_global_state",
+    "name": "Global Mutable State",
+    "category": "design",
+    "severity": "high",
+    "description": "Using global mutable variables that can be modified from anywhere, leading to unpredictable behavior.",
+    "code": "# Global mutable state\ncurrent_user = None\nactive_sessions = {}\nrequest_count = 0\ncache = {}\n\ndef login(username, password):\n    global current_user, request_count\n    request_count += 1\n    user = authenticate(username, password)\n    current_user = user\n    active_sessions[user.id] = create_session()\n    return user\n\ndef get_data():\n    global request_count\n    request_count += 1\n    if current_user is None:\n        raise AuthError('Not logged in')\n    if current_user.id in cache:\n        return cache[current_user.id]\n    data = fetch_from_db(current_user.id)\n    cache[current_user.id] = data\n    return data"
+  },
+  {
+    "id": "ap_spaghetti_import",
+    "name": "Spaghetti Imports / Circular Dependencies",
+    "category": "architecture",
+    "severity": "medium",
+    "description": "Tangled import structure with potential circular dependencies, indicating poor module separation.",
+    "code": "# module_a.py\nfrom module_b import process_b, helper_b\nfrom module_c import validate_c\nfrom module_d import transform_d, format_d, save_d\nfrom module_e import send_notification\nfrom module_b import another_function\nfrom utils import helper1, helper2, helper3, helper4, helper5\nfrom module_c import another_validator, yet_another\n\ndef do_everything(data):\n    validated = validate_c(data)\n    processed = process_b(validated)\n    transformed = transform_d(processed)\n    formatted = format_d(transformed)\n    save_d(formatted)\n    send_notification(formatted)\n    return helper_b(formatted)"
+  },
+  {
+    "id": "ap_hardcoded_config",
+    "name": "Hardcoded Configuration",
+    "category": "security",
+    "severity": "critical",
+    "description": "Hardcoded credentials, API keys, or configuration values directly in source code.",
+    "code": "class DatabaseConnection:\n    def __init__(self):\n        self.host = '192.168.1.100'\n        self.port = 5432\n        self.username = 'admin'\n        self.password = 'super_secret_password_123'\n        self.database = 'production_db'\n        self.api_key = 'sk-abc123def456ghi789'\n    \n    def connect(self):\n        conn_string = f'postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'\n        return psycopg2.connect(conn_string)"
+  }
+]
