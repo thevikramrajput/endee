@@ -337,7 +337,7 @@ endee/                              # Forked Endee repository (base)
 ### Step 1: Clone the Forked Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/endee.git
+git clone https://github.com/thevikramrajput/endee.git
 cd endee
 ```
 
