@@ -3,7 +3,7 @@ CodeDNA — AI-Powered Codebase Genome Analyzer
 Direct-Response SaaS Streamlit Frontend
 """
 import streamlit as st
-import os, sys, shutil, tempfile, hashlib, stat
+import os, sys, shutil, tempfile, hashlib, stat, base64
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import config
@@ -92,6 +92,15 @@ try:
     endee_ok = True
 except: _il = []
 
+@st.cache_data
+def get_video_html(filepath):
+    try:
+        with open(filepath, "rb") as f:
+            data = f.read()
+        b64 = base64.b64encode(data).decode()
+        return f'<video autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;"><source src="data:video/mp4;base64,{b64}" type="video/mp4"></video>'
+    except:
+        return '<div>🎬 Animated Product Demo / Map Visual Placeholder</div>'
 
 # ═══════════════════════════════════════════════════════════════════
 # 1. NAVBAR (Minimal & Sticky)
@@ -104,7 +113,6 @@ st.markdown('''<div class="c-navbar">
     <div class="c-nav-links">
         <a href="#" class="c-nav-link">Features</a>
         <a href="#" class="c-nav-link">How It Works</a>
-        <a href="#" class="c-nav-link">Pricing</a>
         <a href="#" class="c-nav-link">FAQ</a>
     </div>
     <a href="#" class="c-btn c-btn-primary" style="padding:10px 20px">Get Started</a>
@@ -132,14 +140,17 @@ with hc1:
     with bi: btn = st.button("Analyze Repo", type="primary", use_container_width=True)
 
 with hc2:
-    st.markdown('''
+    vid_path = os.path.join(os.path.dirname(__file__), "..", "Animation.mp4")
+    vid_html = get_video_html(vid_path)
+    
+    st.markdown(f'''
     <div style="padding: 60px 0 20px 0;">
         <div class="c-mockup">
             <div class="c-mockup-header">
                 <div class="c-mockup-dot"></div><div class="c-mockup-dot"></div><div class="c-mockup-dot"></div>
             </div>
             <div class="c-mockup-body">
-                <div>🎬 Animated Product Demo / Map Visual Placeholder</div>
+                {vid_html}
             </div>
         </div>
     </div>
@@ -271,52 +282,6 @@ st.markdown('''
             <div class="c-step-num c-heading">3</div>
             <div class="c-step-title">Query & Visualize</div>
             <div class="c-step-desc">Instantly query the DB for meaning, generate health reports, and explore 2D t-SNE visual projections.</div>
-        </div>
-    </div>
-</div>
-''', unsafe_allow_html=True)
-
-
-# ═══════════════════════════════════════════════════════════════════
-# 8. PRICING SECTION
-# ═══════════════════════════════════════════════════════════════════
-st.markdown('''
-<div class="c-section" style="background:#F9FAFB; margin:0 -2.5rem; padding:80px 2.5rem;">
-    <div class="c-section-title c-heading">Simple, Transparent Pricing</div>
-    <div class="c-pricing">
-        <div class="c-price-card">
-            <div class="c-price-name">Basic</div>
-            <div class="c-price-val">$0<span style="font-size:1rem;color:var(--text-muted);font-weight:600">/mo</span></div>
-            <ul class="c-price-features">
-                <li>✅ 5 Repo Analyses per day</li>
-                <li>✅ Semantic Search</li>
-                <li>❌ Health Reports</li>
-                <li>❌ Genome Map</li>
-            </ul>
-            <a href="#" class="c-btn c-btn-secondary" style="width:100%">Get Started</a>
-        </div>
-        <div class="c-price-card c-popular">
-            <div class="c-popular-badge">Most Popular</div>
-            <div class="c-price-name" style="color:var(--primary)">Pro</div>
-            <div class="c-price-val">$29<span style="font-size:1rem;color:var(--text-muted);font-weight:600">/mo</span></div>
-            <ul class="c-price-features">
-                <li>✅ Unlimited Analyses</li>
-                <li>✅ Semantic + Hybrid Search</li>
-                <li>✅ Full Health Reports</li>
-                <li>✅ t-SNE Genome Maps</li>
-            </ul>
-            <a href="#" class="c-btn c-btn-primary" style="width:100%">Start Free Trial</a>
-        </div>
-        <div class="c-price-card">
-            <div class="c-price-name">Enterprise</div>
-            <div class="c-price-val">$99<span style="font-size:1rem;color:var(--text-muted);font-weight:600">/mo</span></div>
-            <ul class="c-price-features">
-                <li>✅ Everything in Pro</li>
-                <li>✅ Local Docker Deployment</li>
-                <li>✅ Custom Anti-Patterns</li>
-                <li>✅ Private Repo Support</li>
-            </ul>
-            <a href="#" class="c-btn c-btn-secondary" style="width:100%">Contact Sales</a>
         </div>
     </div>
 </div>
