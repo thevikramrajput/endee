@@ -228,10 +228,17 @@ for key, val in defaults.items():
 # ─── Helper Functions ────────────────────────────────────────────────
 def clone_repo(repo_url: str) -> str:
     """Clone a public GitHub repo to temp directory."""
+    import stat
+
+    def remove_readonly(func, path, _):
+        """Handle read-only files on Windows (common with .git objects)."""
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+
     repo_hash = hashlib.md5(repo_url.encode()).hexdigest()[:10]
     tmp_dir = os.path.join(tempfile.gettempdir(), f"codedna_{repo_hash}")
     if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir)
+        shutil.rmtree(tmp_dir, onerror=remove_readonly)
     os.makedirs(tmp_dir, exist_ok=True)
     exit_code = os.system(f'git clone --depth=1 "{repo_url}" "{tmp_dir}"')
     if exit_code != 0:
