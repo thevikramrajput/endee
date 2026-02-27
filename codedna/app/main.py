@@ -2,9 +2,6 @@
 CodeDNA — AI-Powered Codebase Genome Analyzer
 ===============================================
 One-click codebase analysis. Paste a GitHub repo URL → get instant insights.
-
-Usage:
-    streamlit run app/main.py
 """
 
 import streamlit as st
@@ -14,13 +11,12 @@ import time
 import shutil
 import tempfile
 import hashlib
+import stat
 
-# Add parent directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import config
 
-
-# ─── Page Configuration ─────────────────────────────────────────────
+# ─── Page Config ─────────────────────────────────────────────────────
 st.set_page_config(
     page_title="CodeDNA — Codebase Genome Analyzer",
     page_icon="🧬",
@@ -28,213 +24,453 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-# ─── Custom CSS ──────────────────────────────────────────────────────
+# ─── Design System CSS ──────────────────────────────────────────────
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-    :root {
-        --primary: #6C5CE7;
-        --primary-light: #A29BFE;
-        --accent: #00D2D3;
-        --accent-green: #00B894;
-        --warning: #FDCB6E;
-        --danger: #E17055;
-        --bg-dark: #0F0F1A;
-        --bg-card: #1A1A2E;
+    /* ── Reset & Base ── */
+    html, body, [class*="css"] { font-family: 'Inter', -apple-system, sans-serif; }
+    .main .block-container { padding-top: 1rem; max-width: 1300px; }
+    [data-testid="stSidebar"] { background: #0a0a0f; border-right: 1px solid #1a1a2a; }
+    .stApp { background: #08080d; }
+
+    /* ── Animated DNA Brand ── */
+    @keyframes dna-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes pulse-glow {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+    }
+    @keyframes slide-up {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-6px); }
+    }
+    @keyframes typing {
+        from { width: 0; }
+        to { width: 100%; }
+    }
+    @keyframes blink {
+        50% { border-color: transparent; }
+    }
+    @keyframes count-up {
+        from { opacity: 0; transform: scale(0.5); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+    @keyframes border-dance {
+        0% { border-color: #2a2a3a; }
+        50% { border-color: #7c3aed; }
+        100% { border-color: #2a2a3a; }
     }
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+    /* ── Logo ── */
+    .dna-logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        animation: slide-up 0.6s ease-out;
     }
-
-    .main .block-container {
-        padding-top: 1.5rem;
-        max-width: 1400px;
+    .dna-icon {
+        font-size: 1.6rem;
+        animation: float 3s ease-in-out infinite;
     }
-
-    /* Hero */
-    .hero-title {
-        font-size: 3.2rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #6C5CE7, #00D2D3, #A29BFE);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 0.2rem;
-        line-height: 1.1;
-        letter-spacing: -1px;
-    }
-
-    .hero-subtitle {
-        font-size: 1.15rem;
-        color: #8B8BA3;
-        font-weight: 300;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Gradient input wrapper */
-    .url-input-wrapper {
-        background: linear-gradient(145deg, #1A1A2E, #16213E);
-        border: 2px solid rgba(108, 92, 231, 0.3);
-        border-radius: 16px;
-        padding: 2rem;
-        margin-bottom: 1.5rem;
-        transition: all 0.3s ease;
-    }
-
-    .url-input-wrapper:hover {
-        border-color: rgba(108, 92, 231, 0.6);
-        box-shadow: 0 8px 32px rgba(108, 92, 231, 0.15);
-    }
-
-    /* Metric cards */
-    .metric-card {
-        background: linear-gradient(145deg, #1A1A2E, #16213E);
-        border: 1px solid rgba(108, 92, 231, 0.2);
-        border-radius: 16px;
-        padding: 1.5rem;
-        text-align: center;
-        transition: all 0.3s ease;
-    }
-
-    .metric-card:hover {
-        border-color: rgba(108, 92, 231, 0.5);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 32px rgba(108, 92, 231, 0.15);
-    }
-
-    .metric-value {
-        font-size: 2.5rem;
+    .dna-text {
+        font-size: 1.1rem;
         font-weight: 700;
-        color: #6C5CE7;
-        line-height: 1;
+        color: #e4e4e7;
+        letter-spacing: -0.5px;
     }
 
-    .metric-label {
-        font-size: 0.85rem;
-        color: #8B8BA3;
+    /* ── Hero Section ── */
+    .hero {
+        animation: slide-up 0.5s ease-out;
+        margin-bottom: 1rem;
+    }
+    .hero-badge {
+        display: inline-block;
+        background: #18181b;
+        color: #a1a1aa;
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: 100px;
+        border: 1px solid #27272a;
+        margin-bottom: 16px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+    .hero h1 {
+        font-size: 3rem;
+        font-weight: 900;
+        color: #fafafa;
+        letter-spacing: -2px;
+        line-height: 1;
+        margin: 0 0 12px 0;
+    }
+    .hero h1 .accent { color: #7c3aed; }
+    .hero p {
+        font-size: 1.1rem;
+        color: #71717a;
+        font-weight: 400;
+        line-height: 1.5;
+        max-width: 600px;
+    }
+
+    /* ── Input Area ── */
+    .input-section {
+        background: #0f0f14;
+        border: 1px solid #1c1c28;
+        border-radius: 12px;
+        padding: 24px;
+        margin: 20px 0;
+        animation: slide-up 0.7s ease-out;
+        transition: border-color 0.3s ease;
+    }
+    .input-section:hover { border-color: #7c3aed40; }
+    .input-label {
+        font-size: 0.8rem;
+        color: #71717a;
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin-top: 0.5rem;
+        font-weight: 600;
+        margin-bottom: 10px;
     }
 
-    /* Grade badge */
-    .grade-badge {
+    /* ── Example Chips ── */
+    .chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #18181b;
+        color: #a1a1aa;
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 6px 14px;
+        border-radius: 8px;
+        border: 1px solid #27272a;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .chip:hover {
+        border-color: #7c3aed;
+        color: #e4e4e7;
+        background: #1a1a24;
+    }
+
+    /* ── Feature Tags ── */
+    .tags { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; animation: slide-up 0.8s ease-out; }
+    .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1px solid;
+    }
+    .tag-violet { color: #a78bfa; border-color: #7c3aed30; background: #7c3aed10; }
+    .tag-cyan { color: #67e8f9; border-color: #06b6d430; background: #06b6d410; }
+    .tag-emerald { color: #6ee7b7; border-color: #10b98130; background: #10b98110; }
+    .tag-amber { color: #fbbf24; border-color: #f59e0b30; background: #f59e0b10; }
+
+    /* ── Stat Cards ── */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        animation: slide-up 0.6s ease-out;
+    }
+    .stat-card {
+        background: #0f0f14;
+        border: 1px solid #1c1c28;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.25s ease;
+        animation: count-up 0.5s ease-out;
+    }
+    .stat-card:hover {
+        border-color: #7c3aed50;
+        transform: translateY(-2px);
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #fafafa;
+        letter-spacing: -1px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .stat-label {
+        font-size: 0.7rem;
+        color: #52525b;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: 600;
+        margin-top: 6px;
+    }
+
+    /* ── Grade Circle ── */
+    .grade-ring {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 3rem;
-        font-weight: 800;
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
+        font-size: 2rem;
+        font-weight: 900;
+        font-family: 'JetBrains Mono', monospace;
+        border: 3px solid;
+        animation: count-up 0.6s ease-out;
     }
-    .grade-A { background: linear-gradient(135deg, #00B894, #55EFC4); color: #1A1A2E; }
-    .grade-B { background: linear-gradient(135deg, #0984E3, #74B9FF); color: #1A1A2E; }
-    .grade-C { background: linear-gradient(135deg, #FDCB6E, #FFEAA7); color: #1A1A2E; }
-    .grade-D { background: linear-gradient(135deg, #E17055, #FAB1A0); color: #1A1A2E; }
-    .grade-F { background: linear-gradient(135deg, #D63031, #FF7675); color: white; }
+    .grade-A { border-color: #10b981; color: #10b981; background: #10b98110; }
+    .grade-B { border-color: #3b82f6; color: #3b82f6; background: #3b82f610; }
+    .grade-C { border-color: #f59e0b; color: #f59e0b; background: #f59e0b10; }
+    .grade-D { border-color: #ef4444; color: #ef4444; background: #ef444410; }
+    .grade-F { border-color: #dc2626; color: #dc2626; background: #dc262610; }
 
-    /* Similarity badge */
-    .similarity-badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #6C5CE7, #A29BFE);
-        color: white;
-        padding: 3px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    /* Feature pill */
-    .feature-pill {
-        display: inline-block;
-        padding: 6px 16px;
-        border-radius: 25px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        margin: 4px;
-    }
-    .pill-purple { background: rgba(108,92,231,0.15); color: #A29BFE; border: 1px solid rgba(108,92,231,0.3); }
-    .pill-green { background: rgba(0,184,148,0.15); color: #55EFC4; border: 1px solid rgba(0,184,148,0.3); }
-    .pill-blue { background: rgba(9,132,227,0.15); color: #74B9FF; border: 1px solid rgba(9,132,227,0.3); }
-    .pill-orange { background: rgba(225,112,85,0.15); color: #FAB1A0; border: 1px solid rgba(225,112,85,0.3); }
-
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0F0F1A 0%, #1A1A2E 100%);
-    }
-
-    /* Progress override */
-    .stProgress .st-bo {
-        background: linear-gradient(90deg, #6C5CE7, #00D2D3);
-    }
-
-    /* Gradient divider */
-    .gradient-divider {
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #6C5CE7, #00D2D3, transparent);
-        border: none;
-        margin: 1.5rem 0;
-    }
-
-    /* Pipeline step */
+    /* ── Pipeline Steps ── */
     .pipeline-step {
-        background: linear-gradient(145deg, #1A1A2E, #16213E);
-        border-left: 4px solid #6C5CE7;
-        border-radius: 0 12px 12px 0;
-        padding: 1rem 1.2rem;
-        margin-bottom: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        color: #a1a1aa;
+        margin-bottom: 4px;
+        transition: all 0.3s ease;
+    }
+    .pipeline-step.active {
+        background: #7c3aed10;
+        color: #c4b5fd;
+        border-left: 2px solid #7c3aed;
+    }
+    .pipeline-step.done {
+        color: #6ee7b7;
+    }
+    .step-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #3f3f46;
+        flex-shrink: 0;
+    }
+    .step-dot.active { background: #7c3aed; animation: pulse-glow 1.5s infinite; }
+    .step-dot.done { background: #10b981; }
+
+    /* ── Sidebar Status ── */
+    .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+    }
+    .dot-green { background: #10b981; box-shadow: 0 0 6px #10b98180; }
+    .dot-red { background: #ef4444; box-shadow: 0 0 6px #ef444480; }
+
+    /* ── Sidebar Nav ── */
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        color: #71717a;
+        font-weight: 500;
+        font-size: 0.88rem;
+        margin-bottom: 2px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .nav-item:hover { background: #18181b; color: #e4e4e7; }
+    .nav-item.active { background: #7c3aed15; color: #c4b5fd; border-left: 2px solid #7c3aed; }
+
+    /* ── Section Headers ── */
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        animation: slide-up 0.5s ease-out;
+    }
+    .section-header h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fafafa;
+        letter-spacing: -0.5px;
+        margin: 0;
+    }
+    .section-header .subtitle {
+        font-size: 0.9rem;
+        color: #52525b;
+        margin-top: 4px;
     }
 
-    .pipeline-step-active {
-        border-left-color: #00D2D3;
-        box-shadow: 0 0 20px rgba(0, 210, 211, 0.1);
+    /* ── Dividers ── */
+    .divider {
+        height: 1px;
+        background: #1c1c28;
+        margin: 20px 0;
     }
 
-    .pipeline-step-done {
-        border-left-color: #00B894;
+    /* ── Code Block Style ── */
+    .code-block {
+        background: #0f0f14;
+        border: 1px solid #1c1c28;
+        border-radius: 8px;
+        padding: 14px 18px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
+        color: #a1a1aa;
+        overflow-x: auto;
     }
 
-    /* Status indicators */
-    .status-connected { color: #00B894; font-weight: 600; }
-    .status-disconnected { color: #E17055; font-weight: 600; }
+    /* ── Violation Card ── */
+    .violation-card {
+        background: #0f0f14;
+        border: 1px solid #1c1c28;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+    }
+    .violation-card:hover { border-color: #27272a; }
+    .severity-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    .sev-critical { background: #ef4444; }
+    .sev-high { background: #f97316; }
+    .sev-medium { background: #eab308; }
+    .sev-low { background: #3b82f6; }
+
+    /* ── Search Bar ── */
+    .search-mode-btn {
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        border: 1px solid #27272a;
+        color: #71717a;
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .search-mode-btn.active {
+        background: #7c3aed;
+        color: white;
+        border-color: #7c3aed;
+    }
+
+    /* ── About Section ── */
+    .about-card {
+        background: #0f0f14;
+        border: 1px solid #1c1c28;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 12px;
+    }
+    .about-card h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #e4e4e7;
+        margin: 0 0 8px 0;
+    }
+    .about-card p {
+        font-size: 0.88rem;
+        color: #71717a;
+        line-height: 1.6;
+    }
+
+    /* ── Streamlit overrides ── */
+    .stProgress > div > div > div > div { background: #7c3aed !important; }
+    div[data-testid="stMetricValue"] { font-family: 'JetBrains Mono', monospace; }
+    .stButton > button[kind="primary"] {
+        background: #7c3aed !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s !important;
+    }
+    .stButton > button[kind="primary"]:hover {
+        background: #6d28d9 !important;
+        transform: translateY(-1px) !important;
+    }
+    .stButton > button {
+        border-radius: 8px !important;
+        border: 1px solid #27272a !important;
+        background: #18181b !important;
+        color: #a1a1aa !important;
+        font-weight: 500 !important;
+        transition: all 0.2s !important;
+    }
+    .stButton > button:hover {
+        border-color: #7c3aed60 !important;
+        color: #e4e4e7 !important;
+    }
+    .stTextInput > div > div > input {
+        background: #18181b !important;
+        border: 1px solid #27272a !important;
+        border-radius: 8px !important;
+        color: #e4e4e7 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 0.9rem !important;
+    }
+    .stTextInput > div > div > input:focus {
+        border-color: #7c3aed !important;
+        box-shadow: 0 0 0 1px #7c3aed40 !important;
+    }
+    .stTextArea > div > div > textarea {
+        background: #18181b !important;
+        border: 1px solid #27272a !important;
+        border-radius: 8px !important;
+        color: #e4e4e7 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+    .stSelectbox > div > div { background: #18181b !important; }
+    div[data-testid="stExpander"] {
+        background: #0f0f14;
+        border: 1px solid #1c1c28;
+        border-radius: 10px;
+    }
+    div[data-testid="stExpander"]:hover { border-color: #27272a; }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ─── Session State ───────────────────────────────────────────────────
 defaults = {
-    "analysis_complete": False,
-    "analysis_running": False,
-    "parsed_units": [],
-    "health_report": None,
-    "evolution_data": None,
-    "search_results": [],
-    "repo_url": "",
-    "repo_name": "",
-    "embedder": None,
-    "sparse_gen": None,
-    "indexer": None,
-    "searcher": None,
+    "analysis_complete": False, "parsed_units": [], "health_report": None,
+    "evolution_data": None, "repo_url": "", "repo_name": "",
+    "embedder": None, "sparse_gen": None, "indexer": None, "searcher": None,
 }
-for key, val in defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = val
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
 
-# ─── Helper Functions ────────────────────────────────────────────────
+# ─── Helpers ─────────────────────────────────────────────────────────
 def clone_repo(repo_url: str) -> str:
-    """Clone a public GitHub repo to temp directory."""
-    import stat
-
     def remove_readonly(func, path, _):
-        """Handle read-only files on Windows (common with .git objects)."""
         os.chmod(path, stat.S_IWRITE)
         func(path)
-
     repo_hash = hashlib.md5(repo_url.encode()).hexdigest()[:10]
     tmp_dir = os.path.join(tempfile.gettempdir(), f"codedna_{repo_hash}")
     if os.path.exists(tmp_dir):
@@ -242,21 +478,17 @@ def clone_repo(repo_url: str) -> str:
     os.makedirs(tmp_dir, exist_ok=True)
     exit_code = os.system(f'git clone --depth=1 "{repo_url}" "{tmp_dir}"')
     if exit_code != 0:
-        raise RuntimeError(f"Failed to clone repository: {repo_url}")
+        raise RuntimeError(f"Failed to clone: {repo_url}")
     return tmp_dir
 
 
 def get_repo_name(url: str) -> str:
-    """Extract repo name from GitHub URL."""
     url = url.rstrip("/").rstrip(".git")
     parts = url.split("/")
-    if len(parts) >= 2:
-        return f"{parts[-2]}/{parts[-1]}"
-    return parts[-1] if parts else "unknown"
+    return f"{parts[-2]}/{parts[-1]}" if len(parts) >= 2 else parts[-1]
 
 
 def run_full_pipeline(repo_url: str, progress_callback=None):
-    """Run the complete CodeDNA analysis pipeline."""
     from core.parser import CodeParser
     from core.embedder import CodeEmbedder
     from core.sparse import SparseVectorGenerator
@@ -267,687 +499,550 @@ def run_full_pipeline(repo_url: str, progress_callback=None):
 
     results = {}
 
-    # Step 1: Clone
-    if progress_callback:
-        progress_callback("clone", "📥 Cloning repository...")
-    repo_path = clone_repo(repo_url)
-    results["repo_path"] = repo_path
+    if progress_callback: progress_callback("clone", "Cloning repository...")
+    results["repo_path"] = clone_repo(repo_url)
 
-    # Step 2: Parse
-    if progress_callback:
-        progress_callback("parse", "🔍 Parsing source code...")
+    if progress_callback: progress_callback("parse", "Parsing source code...")
     parser = CodeParser()
-    units = parser.parse_directory(repo_path, recursive=True)
+    units = parser.parse_directory(results["repo_path"], recursive=True)
     if not units:
-        raise ValueError("No code units found in this repository. Make sure it contains Python, JavaScript, or Java files.")
+        raise ValueError("No Python/JS/Java files found in this repo.")
     results["units"] = units
     st.session_state.parsed_units = units
 
-    # Gather stats
-    lang_counts = {}
-    type_counts = {}
-    total_loc = 0
-    total_complexity = 0
+    lang_counts, type_counts, total_loc, total_cx = {}, {}, 0, 0
     for u in units:
         lang_counts[u.language] = lang_counts.get(u.language, 0) + 1
         type_counts[u.unit_type] = type_counts.get(u.unit_type, 0) + 1
         total_loc += u.loc
-        total_complexity += u.complexity
-    results["lang_counts"] = lang_counts
-    results["type_counts"] = type_counts
-    results["total_loc"] = total_loc
-    results["avg_complexity"] = round(total_complexity / len(units), 1) if units else 0
+        total_cx += u.complexity
+    results.update({"lang_counts": lang_counts, "type_counts": type_counts,
+                     "total_loc": total_loc, "avg_complexity": round(total_cx / len(units), 1)})
 
-    # Step 3: Embed
-    if progress_callback:
-        progress_callback("embed", "🧠 Generating AI embeddings...")
+    if progress_callback: progress_callback("embed", "Generating AI embeddings...")
     embedder = CodeEmbedder()
     sparse_gen = SparseVectorGenerator()
-    if len(units) > 5:
-        sparse_gen.fit(units)
+    if len(units) > 5: sparse_gen.fit(units)
     st.session_state.embedder = embedder
     st.session_state.sparse_gen = sparse_gen
 
-    # Step 4: Index to Endee
-    if progress_callback:
-        progress_callback("index", "📦 Indexing vectors into Endee...")
+    if progress_callback: progress_callback("index", "Indexing into Endee...")
     indexer = EndeeIndexer(embedder=embedder, sparse_gen=sparse_gen)
     indexer.setup_indexes()
-    index_results = indexer.index_codebase(units)
-    results["index_results"] = index_results
+    results["index_results"] = indexer.index_codebase(units)
     st.session_state.indexer = indexer
 
-    # Step 5: Health Analysis
-    if progress_callback:
-        progress_callback("health", "🏥 Running health diagnostics...")
+    if progress_callback: progress_callback("health", "Running health analysis...")
     searcher = CodeSearcher(embedder=embedder, sparse_gen=sparse_gen)
     analyzer = CodeHealthAnalyzer(searcher=searcher)
-    report = analyzer.analyze_codebase(units)
-    results["health_report"] = report
-    st.session_state.health_report = report
+    results["health_report"] = analyzer.analyze_codebase(units)
+    st.session_state.health_report = results["health_report"]
     st.session_state.searcher = searcher
 
-    # Step 6: Evolution Map
-    if progress_callback:
-        progress_callback("evolution", "📈 Generating genome map...")
-    tracker = EvolutionTracker(embedder=embedder)
+    if progress_callback: progress_callback("evolution", "Generating genome map...")
     try:
-        projection = tracker.get_embedding_projections(units, method="tsne", n_components=2)
-        results["evolution_data"] = projection
-        st.session_state.evolution_data = projection
+        tracker = EvolutionTracker(embedder=embedder)
+        results["evolution_data"] = tracker.get_embedding_projections(units, method="tsne")
+        st.session_state.evolution_data = results["evolution_data"]
     except Exception:
         results["evolution_data"] = None
 
-    # Cleanup
-    if progress_callback:
-        progress_callback("done", "✅ Analysis complete!")
-
+    if progress_callback: progress_callback("done", "Complete!")
     return results
 
 
 # ─── Sidebar ─────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 🧬 CodeDNA")
-    st.markdown("*AI-Powered Codebase Genome Analyzer*")
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="dna-logo">'
+        '<span class="dna-icon">🧬</span>'
+        '<span class="dna-text">CodeDNA</span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption("AI-Powered Codebase Genome Analyzer")
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-    # Endee connection status
-    st.markdown("### 🔌 Endee Database")
+    # Connection status
     endee_url = f"http://{config.ENDEE_HOST}:{config.ENDEE_PORT}"
     endee_connected = False
     try:
         from endee import Endee
         client = Endee()
         client.set_base_url(f"{endee_url}/api/v1")
-        raw_indexes = client.list_indexes()
-        indexes = raw_indexes.get("indexes", []) if isinstance(raw_indexes, dict) else raw_indexes
+        raw = client.list_indexes()
+        idx_list = raw.get("indexes", []) if isinstance(raw, dict) else raw
         endee_connected = True
         st.markdown(
-            f'<span class="status-connected">● Connected</span>',
+            f'<span class="status-dot dot-green"></span>'
+            f'<span style="color:#a1a1aa;font-size:0.85rem">Endee connected · {len(idx_list)} indexes</span>',
             unsafe_allow_html=True,
         )
-        st.caption(f"{len(indexes)} index(es) active")
     except Exception:
         st.markdown(
-            '<span class="status-disconnected">● Disconnected</span>',
+            '<span class="status-dot dot-red"></span>'
+            '<span style="color:#71717a;font-size:0.85rem">Endee offline</span>',
             unsafe_allow_html=True,
         )
-        st.caption("Start Endee: `docker compose up -d`")
 
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
     # Navigation
-    st.markdown("### 🧭 Navigation")
+    pages = ["🏠  Analyze", "⚙️  About"]
     if st.session_state.analysis_complete:
-        page = st.radio(
-            "Select Page",
-            ["🏠 Analyze Repo", "🔍 Semantic Search", "🏥 Health Report", "📈 Code Genome", "⚙️ About"],
-            label_visibility="collapsed",
-        )
-    else:
-        page = st.radio(
-            "Select Page",
-            ["🏠 Analyze Repo", "⚙️ About"],
-            label_visibility="collapsed",
-        )
+        pages = ["🏠  Analyze", "🔍  Search", "🏥  Health", "📈  Genome", "⚙️  About"]
+    page = st.radio("nav", pages, label_visibility="collapsed")
 
-    # Powered by
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
-    st.markdown("### 🔋 Powered by")
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+
+    # Tech stack
     st.markdown(
-        '<span class="feature-pill pill-purple">Endee Vector DB</span>'
-        '<span class="feature-pill pill-green">Sentence Transformers</span>'
-        '<span class="feature-pill pill-blue">Streamlit</span>'
-        '<span class="feature-pill pill-orange">Plotly</span>',
+        '<div class="tags">'
+        '<span class="tag tag-violet">Endee</span>'
+        '<span class="tag tag-cyan">Transformers</span>'
+        '<span class="tag tag-emerald">Streamlit</span>'
+        '<span class="tag tag-amber">Plotly</span>'
+        '</div>',
         unsafe_allow_html=True,
     )
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  PAGE: ANALYZE REPO (Home)
+#  HOME — Analyze Repo
 # ═══════════════════════════════════════════════════════════════════
-if page == "🏠 Analyze Repo":
-
+if page == "🏠  Analyze":
     # Hero
     st.markdown(
-        '<div class="hero-title">CodeDNA</div>'
-        '<div class="hero-subtitle">'
-        "Paste a public GitHub repo link → get instant AI-powered code intelligence."
-        "</div>",
+        '<div class="hero">'
+        '<div class="hero-badge">✦ AI-Powered Analysis</div>'
+        '<h1>Code<span class="accent">DNA</span></h1>'
+        '<p>Paste a public GitHub repo. We\'ll analyze its genome — search, health, evolution — in under a minute.</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
 
-    # Feature pills
+    # Tags
     st.markdown(
-        '<span class="feature-pill pill-purple">🔍 Semantic Search</span>'
-        '<span class="feature-pill pill-green">🧪 Hybrid Search</span>'
-        '<span class="feature-pill pill-blue">🏥 Health Analysis</span>'
-        '<span class="feature-pill pill-orange">📈 Evolution Tracking</span>',
+        '<div class="tags">'
+        '<span class="tag tag-violet">🔍 Semantic Search</span>'
+        '<span class="tag tag-cyan">🧪 Hybrid Search</span>'
+        '<span class="tag tag-emerald">🏥 Health Score</span>'
+        '<span class="tag tag-amber">📈 Genome Map</span>'
+        '</div>',
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+    # Input
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="input-label">GITHUB REPOSITORY URL</div>', unsafe_allow_html=True)
 
-    # ─── URL Input ───────────────────────────────────────────────
-    st.markdown("### 🔗 Enter GitHub Repository URL")
-
-    col_input, col_btn = st.columns([4, 1])
-    with col_input:
+    col_in, col_btn = st.columns([5, 1])
+    with col_in:
         repo_url = st.text_input(
-            "GitHub URL",
-            placeholder="https://github.com/pallets/flask",
-            label_visibility="collapsed",
-            key="repo_url_input",
+            "repo", placeholder="https://github.com/pallets/flask",
+            label_visibility="collapsed", key="repo_url_input",
         )
     with col_btn:
-        analyze_clicked = st.button("🧬 Analyze", type="primary", use_container_width=True)
+        analyze_clicked = st.button("Analyze →", type="primary", use_container_width=True)
 
-    # Example repos
-    st.markdown("**Try these:**")
-    example_cols = st.columns(4)
+    # Quick picks
+    st.markdown('<div class="input-label" style="margin-top:14px">QUICK PICK</div>', unsafe_allow_html=True)
+    qc = st.columns(4)
     examples = [
         ("Flask", "https://github.com/pallets/flask"),
         ("FastAPI", "https://github.com/tiangolo/fastapi"),
         ("Requests", "https://github.com/psf/requests"),
-        ("Express.js", "https://github.com/expressjs/express"),
+        ("Express", "https://github.com/expressjs/express"),
     ]
     for i, (name, url) in enumerate(examples):
-        with example_cols[i]:
-            if st.button(f"📦 {name}", use_container_width=True, key=f"example_{i}"):
+        with qc[i]:
+            if st.button(f"{name}", key=f"ex_{i}", use_container_width=True):
                 st.session_state.repo_url_input = url
                 repo_url = url
                 analyze_clicked = True
 
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-    # ─── Analysis Pipeline ───────────────────────────────────────
+    # ── Run Pipeline ──
     if analyze_clicked and repo_url:
         if not endee_connected:
-            st.error("⚠️ Endee is not running. Please start it with `docker compose up -d`")
+            st.error("Endee is offline. Run `docker compose up -d` first.")
         elif "github.com" not in repo_url:
-            st.error("Please enter a valid GitHub repository URL.")
+            st.error("Enter a valid GitHub URL.")
         else:
             st.session_state.repo_name = get_repo_name(repo_url)
             st.session_state.repo_url = repo_url
-            st.session_state.analysis_complete = False
 
-            # Pipeline progress display
-            st.markdown(f"### 🧬 Analyzing `{st.session_state.repo_name}`")
-
-            pipeline_steps = {
-                "clone": "📥 Cloning repository",
-                "parse": "🔍 Parsing source code",
-                "embed": "🧠 Generating AI embeddings",
-                "index": "📦 Indexing to Endee",
-                "health": "🏥 Health diagnostics",
-                "evolution": "📈 Generating genome map",
-                "done": "✅ Complete",
+            steps_order = ["clone", "parse", "embed", "index", "health", "evolution", "done"]
+            steps_label = {
+                "clone": "📥  Cloning repository",
+                "parse": "🔍  Parsing source code",
+                "embed": "🧠  Generating embeddings",
+                "index": "📦  Indexing into Endee",
+                "health": "🏥  Health analysis",
+                "evolution": "📈  Genome mapping",
+                "done": "✅  Complete",
             }
 
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            step_count = len(pipeline_steps) - 1  # exclude "done"
+            progress = st.progress(0)
+            status = st.empty()
 
-            current_step_idx = [0]
-
-            def update_progress(step_key, message):
-                step_keys = list(pipeline_steps.keys())
-                idx = step_keys.index(step_key)
-                progress = min(idx / step_count, 1.0)
-                progress_bar.progress(progress)
-                status_text.markdown(f"**{message}**")
-                current_step_idx[0] = idx
+            def on_progress(step, msg):
+                idx = steps_order.index(step)
+                progress.progress(min(idx / (len(steps_order) - 1), 1.0))
+                status.markdown(f"**{steps_label.get(step, msg)}**")
 
             try:
-                results = run_full_pipeline(repo_url, progress_callback=update_progress)
-
-                progress_bar.progress(1.0)
-                status_text.markdown("**✅ Analysis complete!**")
+                results = run_full_pipeline(repo_url, on_progress)
+                progress.progress(1.0)
+                status.empty()
                 st.session_state.analysis_complete = True
 
-                # Show quick summary
-                st.success(f"🎉 Successfully analyzed **{st.session_state.repo_name}**!")
+                # Success banner
+                st.markdown(
+                    f'<div style="background:#10b98115;border:1px solid #10b98130;border-radius:10px;'
+                    f'padding:14px 20px;color:#6ee7b7;font-weight:500;animation:slide-up 0.5s ease-out">'
+                    f'✓ Successfully analyzed <strong>{st.session_state.repo_name}</strong></div>',
+                    unsafe_allow_html=True,
+                )
 
-                # Summary metrics
-                mcol1, mcol2, mcol3, mcol4, mcol5 = st.columns(5)
+                # Stats
+                report = results["health_report"]
+                rd = report.to_dict()
+                grade = rd["grade"]
 
-                with mcol1:
-                    st.markdown(
-                        f'<div class="metric-card">'
-                        f'<div class="metric-value">{len(results["units"])}</div>'
-                        f'<div class="metric-label">Code Units</div>'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
-                with mcol2:
-                    st.markdown(
-                        f'<div class="metric-card">'
-                        f'<div class="metric-value">{results["total_loc"]:,}</div>'
-                        f'<div class="metric-label">Lines of Code</div>'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
-                with mcol3:
-                    st.markdown(
-                        f'<div class="metric-card">'
-                        f'<div class="metric-value">{len(results["lang_counts"])}</div>'
-                        f'<div class="metric-label">Languages</div>'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
-                with mcol4:
-                    report = results["health_report"]
-                    report_dict = report.to_dict()
-                    grade = report_dict["grade"]
-                    grade_class = f"grade-{grade}"
-                    st.markdown(
-                        f'<div class="metric-card">'
-                        f'<div class="grade-badge {grade_class}" style="margin:0 auto">{grade}</div>'
-                        f'<div class="metric-label">Health Grade</div>'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
-                with mcol5:
-                    st.markdown(
-                        f'<div class="metric-card">'
-                        f'<div class="metric-value">{report_dict["overall_score"]}</div>'
-                        f'<div class="metric-label">Health Score</div>'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
+                st.markdown(
+                    f'<div class="stats-grid" style="margin-top:20px">'
+                    f'<div class="stat-card">'
+                    f'  <div class="stat-value">{len(results["units"])}</div>'
+                    f'  <div class="stat-label">Code Units</div>'
+                    f'</div>'
+                    f'<div class="stat-card">'
+                    f'  <div class="stat-value">{results["total_loc"]:,}</div>'
+                    f'  <div class="stat-label">Lines of Code</div>'
+                    f'</div>'
+                    f'<div class="stat-card">'
+                    f'  <div class="stat-value">{len(results["lang_counts"])}</div>'
+                    f'  <div class="stat-label">Languages</div>'
+                    f'</div>'
+                    f'<div class="stat-card">'
+                    f'  <div class="grade-ring grade-{grade}" style="margin:0 auto">{grade}</div>'
+                    f'  <div class="stat-label">Health Grade</div>'
+                    f'</div>'
+                    f'<div class="stat-card">'
+                    f'  <div class="stat-value">{rd["overall_score"]}</div>'
+                    f'  <div class="stat-label">Score /100</div>'
+                    f'</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
 
-                st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
-                st.info("👈 Use the **sidebar** to explore Semantic Search, Health Report, and Code Genome Map!")
+                st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+                st.info("👈  Use the sidebar to explore **Search**, **Health**, and **Genome Map**.")
 
             except Exception as e:
-                progress_bar.empty()
-                status_text.empty()
-                st.error(f"❌ Analysis failed: {str(e)}")
-                st.info(
-                    "**Troubleshooting:**\n"
-                    "- Make sure the repository URL is valid and public\n"
-                    "- Make sure Endee is running (`docker compose up -d`)\n"
-                    "- Make sure `git` is installed on your system\n"
-                )
+                progress.empty()
+                status.empty()
+                st.error(f"Analysis failed: {e}")
+                st.caption("Make sure the repo URL is valid, public, and Endee is running.")
 
-    # Show previous results if available
     elif st.session_state.analysis_complete:
-        st.success(f"✅ Last analysis: **{st.session_state.repo_name}**")
-        st.info("👈 Use the sidebar to explore results, or paste a new repo above.")
+        st.markdown(
+            f'<div style="background:#7c3aed10;border:1px solid #7c3aed30;border-radius:10px;'
+            f'padding:14px 20px;color:#c4b5fd;font-weight:500">'
+            f'✦ Last analyzed: <strong>{st.session_state.repo_name}</strong> — use sidebar to explore results</div>',
+            unsafe_allow_html=True,
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  PAGE: SEMANTIC SEARCH
+#  SEARCH
 # ═══════════════════════════════════════════════════════════════════
-elif page == "🔍 Semantic Search":
-    st.markdown(f"## 🔍 Semantic Code Search")
-    st.markdown(f"Search `{st.session_state.repo_name}` by **meaning**, not just keywords.")
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
-
-    # Search mode
-    search_mode = st.radio(
-        "Search Mode",
-        ["Dense (Semantic)", "Hybrid (Semantic + Keyword)", "Find Similar Code"],
-        horizontal=True,
+elif page == "🔍  Search":
+    st.markdown(
+        '<div class="section-header"><h2>🔍 Semantic Search</h2></div>'
+        f'<div class="section-header"><span class="subtitle">Search <code>{st.session_state.repo_name}</code> by meaning, not keywords</span></div>',
+        unsafe_allow_html=True,
     )
 
-    # Query
-    if search_mode == "Find Similar Code":
-        query = st.text_area(
-            "Paste code to find similar implementations:",
-            height=180,
-            placeholder="def calculate_fibonacci(n):\n    if n <= 1:\n        return n\n    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)",
-        )
+    mode = st.radio("Mode", ["Dense", "Hybrid", "Similar Code"], horizontal=True, label_visibility="collapsed")
+
+    if mode == "Similar Code":
+        query = st.text_area("Paste code:", height=150, placeholder="def fibonacci(n):\n    ...")
     else:
-        query = st.text_input(
-            "What are you looking for?",
-            placeholder='e.g., "function that handles user authentication" or "error handling middleware"',
-        )
+        query = st.text_input("Query", placeholder='e.g. "function that validates email"')
 
-    # Filters
-    with st.expander("🎛️ Advanced Filters (Endee $eq / $range operators)"):
-        fcol1, fcol2, fcol3 = st.columns(3)
-        with fcol1:
-            language_filter = st.selectbox("Language ($eq)", [None, "python", "javascript", "java"])
-        with fcol2:
-            unit_type_filter = st.selectbox("Unit Type ($eq)", [None, "function", "class", "module"])
-        with fcol3:
-            top_k = st.slider("Max Results", 1, 30, 10)
+    with st.expander("⚙ Filters"):
+        fc1, fc2, fc3 = st.columns(3)
+        lang_f = fc1.selectbox("Language", [None, "python", "javascript", "java"])
+        type_f = fc2.selectbox("Type", [None, "function", "class", "module"])
+        top_k = fc3.slider("Results", 1, 30, 10)
 
-    # Search
-    if st.button("🚀 Search Endee", type="primary", use_container_width=True):
+    if st.button("Search →", type="primary", use_container_width=True):
         if not query:
-            st.warning("Enter a search query first!")
-        elif st.session_state.searcher is None:
-            st.error("Please analyze a repository first from the home page.")
+            st.warning("Enter a query first.")
+        elif not st.session_state.searcher:
+            st.error("Analyze a repo first.")
         else:
-            with st.spinner("🔍 Searching Endee vectors..."):
+            with st.spinner("Searching vectors..."):
                 try:
-                    searcher = st.session_state.searcher
-
-                    if search_mode == "Dense (Semantic)":
-                        results = searcher.search_dense(
-                            query=query, top_k=top_k,
-                            language=language_filter, unit_type=unit_type_filter,
-                        )
-                    elif search_mode == "Hybrid (Semantic + Keyword)":
-                        results = searcher.search_hybrid(
-                            query=query, top_k=top_k,
-                            language=language_filter, unit_type=unit_type_filter,
-                        )
+                    s = st.session_state.searcher
+                    if mode == "Dense":
+                        res = s.search_dense(query=query, top_k=top_k, language=lang_f, unit_type=type_f)
+                    elif mode == "Hybrid":
+                        res = s.search_hybrid(query=query, top_k=top_k, language=lang_f, unit_type=type_f)
                     else:
-                        results = searcher.find_similar_code(code_snippet=query, top_k=top_k)
+                        res = s.find_similar_code(code_snippet=query, top_k=top_k)
 
-                    if results:
-                        st.success(f"Found **{len(results)}** results!")
-                        for i, result in enumerate(results):
-                            meta = result.metadata
+                    if res:
+                        st.markdown(f'<div style="color:#6ee7b7;font-weight:500;margin:12px 0">Found {len(res)} results</div>', unsafe_allow_html=True)
+                        for i, r in enumerate(res):
+                            m = r.metadata
+                            sim_pct = min(r.similarity * 100, 100)
                             with st.expander(
-                                f"**{i+1}. {meta.get('name', 'Unknown')}** — "
-                                f"`{meta.get('file_path', '')}` "
-                                f"(Similarity: {result.similarity:.4f})",
+                                f"**{m.get('name', '?')}** · `{m.get('language', '?')}` · {sim_pct:.1f}% match",
                                 expanded=(i < 3),
                             ):
-                                ic1, ic2, ic3, ic4 = st.columns(4)
-                                ic1.metric("Language", meta.get("language", "?"))
-                                ic2.metric("Type", meta.get("unit_type", "?"))
-                                ic3.metric("LOC", meta.get("loc", "?"))
-                                ic4.metric("Complexity", meta.get("complexity", "?"))
-
-                                st.progress(
-                                    min(result.similarity, 1.0),
-                                    text=f"Vector Similarity: {result.similarity:.4f}",
-                                )
+                                c1, c2, c3, c4 = st.columns(4)
+                                c1.metric("Language", m.get("language", "?"))
+                                c2.metric("Type", m.get("unit_type", "?"))
+                                c3.metric("LOC", m.get("loc", "?"))
+                                c4.metric("Complexity", m.get("complexity", "?"))
+                                st.progress(min(r.similarity, 1.0), text=f"Similarity: {r.similarity:.4f}")
                     else:
-                        st.info("No results found. Try a broader query.")
-
+                        st.info("No results. Try a broader query.")
                 except Exception as e:
-                    st.error(f"Search failed: {e}")
+                    st.error(f"Search error: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  PAGE: HEALTH REPORT
+#  HEALTH
 # ═══════════════════════════════════════════════════════════════════
-elif page == "🏥 Health Report":
-    st.markdown(f"## 🏥 Codebase Health Report")
-    st.markdown(f"Health diagnostics for `{st.session_state.repo_name}` — powered by Endee anti-pattern matching.")
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+elif page == "🏥  Health":
+    st.markdown(
+        '<div class="section-header"><h2>🏥 Health Report</h2></div>'
+        f'<div class="section-header"><span class="subtitle">Anti-pattern matching for <code>{st.session_state.repo_name}</code></span></div>',
+        unsafe_allow_html=True,
+    )
 
     report = st.session_state.health_report
-    if report is None:
-        st.warning("Please analyze a repository first from the home page.")
+    if not report:
+        st.warning("Analyze a repo first.")
     else:
-        report_dict = report.to_dict()
+        rd = report.to_dict()
+        grade = rd["grade"]
 
-        # Top row: Grade + Score + Violations
-        gcol1, gcol2, gcol3, gcol4 = st.columns([1, 1, 1, 1])
-
-        with gcol1:
-            grade = report_dict["grade"]
-            grade_class = f"grade-{grade}"
+        # Top metrics
+        g1, g2, g3, g4 = st.columns([1, 1, 1, 1])
+        with g1:
             st.markdown(
                 f'<div style="text-align:center">'
-                f'<div class="grade-badge {grade_class}">{grade}</div>'
-                f'<p style="margin-top:10px;color:#8B8BA3;font-size:0.9rem">Overall Grade</p>'
-                f'</div>',
+                f'<div class="grade-ring grade-{grade}">{grade}</div>'
+                f'<div class="stat-label" style="margin-top:10px">Grade</div></div>',
                 unsafe_allow_html=True,
             )
+        g2.metric("Score", f"{rd['overall_score']}/100")
+        g3.metric("Violations", rd["total_violations"])
+        g4.metric("Units", rd["total_units_analyzed"])
 
-        with gcol2:
-            st.metric("Health Score", f"{report_dict['overall_score']}/100")
-        with gcol3:
-            st.metric("Total Violations", report_dict["total_violations"])
-        with gcol4:
-            st.metric("Units Analyzed", report_dict["total_units_analyzed"])
+        st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-        st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+        # Metrics
+        m = rd["metrics"]
+        mc = st.columns(5)
+        mc[0].metric("Total LOC", f"{m['total_loc']:,}")
+        mc[1].metric("Avg Complexity", m["avg_complexity"])
+        mc[2].metric("Doc %", f"{m['documentation_ratio']}%")
+        mc[3].metric("Functions", m["function_count"])
+        mc[4].metric("Classes", m["class_count"])
 
-        # Metrics row
-        st.markdown("### 📊 Codebase Metrics")
-        mm1, mm2, mm3, mm4, mm5 = st.columns(5)
-        metrics = report_dict["metrics"]
-        mm1.metric("Total LOC", f"{metrics['total_loc']:,}")
-        mm2.metric("Avg Complexity", metrics["avg_complexity"])
-        mm3.metric("Documentation %", f"{metrics['documentation_ratio']}%")
-        mm4.metric("Functions", metrics["function_count"])
-        mm5.metric("Classes", metrics["class_count"])
+        st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-        st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
-
-        # Violations chart
+        # Charts
         if report.violations:
-            st.markdown("### ⚠️ Violations Breakdown")
-
             import plotly.express as px
-            import plotly.graph_objects as go
             import pandas as pd
 
-            # Severity donut chart + Category bar chart side by side
             ch1, ch2 = st.columns(2)
-
             with ch1:
-                severity_data = pd.DataFrame({
+                sev = pd.DataFrame({
                     "Severity": ["Critical", "High", "Medium", "Low"],
-                    "Count": [
-                        report_dict["critical_violations"],
-                        report_dict["high_violations"],
-                        report_dict["medium_violations"],
-                        report_dict["low_violations"],
-                    ],
-                    "Color": ["#D63031", "#E17055", "#FDCB6E", "#74B9FF"],
+                    "Count": [rd["critical_violations"], rd["high_violations"],
+                              rd["medium_violations"], rd["low_violations"]],
                 })
-                fig = px.pie(
-                    severity_data, names="Severity", values="Count",
-                    color="Severity",
-                    color_discrete_map={"Critical": "#D63031", "High": "#E17055", "Medium": "#FDCB6E", "Low": "#74B9FF"},
-                    hole=0.5, title="Violations by Severity",
-                )
-                fig.update_layout(
-                    plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                    font_color="#EAEAEA", height=350,
-                )
+                fig = px.pie(sev, names="Severity", values="Count", hole=0.55,
+                             color="Severity",
+                             color_discrete_map={"Critical": "#ef4444", "High": "#f97316",
+                                                  "Medium": "#eab308", "Low": "#3b82f6"})
+                fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+                                  font_color="#a1a1aa", height=320, margin=dict(t=30, b=0))
                 st.plotly_chart(fig, use_container_width=True)
 
             with ch2:
-                # Category breakdown
-                categories = {}
+                cats = {}
                 for v in report.violations:
-                    cat = v.category if hasattr(v, "category") else "general"
-                    categories[cat] = categories.get(cat, 0) + 1
-
-                if categories:
-                    cat_df = pd.DataFrame(list(categories.items()), columns=["Category", "Count"])
-                    fig2 = px.bar(
-                        cat_df, x="Category", y="Count", color="Count",
-                        color_continuous_scale=["#6C5CE7", "#00D2D3"],
-                        title="Violations by Category",
-                    )
-                    fig2.update_layout(
-                        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                        font_color="#EAEAEA", showlegend=False, height=350,
-                    )
+                    c = getattr(v, "category", "general")
+                    cats[c] = cats.get(c, 0) + 1
+                if cats:
+                    cdf = pd.DataFrame(list(cats.items()), columns=["Category", "Count"])
+                    fig2 = px.bar(cdf, x="Category", y="Count", color="Count",
+                                  color_continuous_scale=["#7c3aed", "#a78bfa"])
+                    fig2.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+                                       font_color="#a1a1aa", showlegend=False, height=320,
+                                       margin=dict(t=30, b=0))
                     st.plotly_chart(fig2, use_container_width=True)
 
-            # Individual violations
-            st.markdown("### 📋 Violation Details")
-            severity_icons = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🔵"}
-
-            for v in report.violations[:25]:
-                icon = severity_icons.get(v.severity, "⚪")
-                with st.expander(f"{icon} [{v.severity.upper()}] {v.pattern_name} → {v.code_unit_name}"):
-                    st.write(f"**File:** `{v.code_unit_file}`")
-                    st.write(f"**Description:** {v.description}")
-                    st.write(f"**Suggestion:** {v.suggestion}")
+            # Violation list
+            st.markdown("### Violations")
+            sev_dots = {"critical": "sev-critical", "high": "sev-high", "medium": "sev-medium", "low": "sev-low"}
+            for v in report.violations[:20]:
+                dot_cls = sev_dots.get(v.severity, "sev-low")
+                with st.expander(f"**{v.pattern_name}** → {v.code_unit_name}"):
+                    st.caption(f"Severity: {v.severity.upper()} · File: {v.code_unit_file}")
+                    st.write(v.description)
+                    st.write(f"**Fix:** {v.suggestion}")
                     if hasattr(v, "similarity") and v.similarity:
-                        st.progress(v.similarity, text=f"Similarity: {v.similarity:.2%}")
+                        st.progress(v.similarity)
         else:
-            st.success("🎉 No violations found! Your codebase is clean.")
+            st.markdown(
+                '<div style="text-align:center;padding:40px;color:#6ee7b7;font-size:1.1rem">'
+                '✦ No violations found. Clean codebase!</div>',
+                unsafe_allow_html=True,
+            )
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  PAGE: CODE GENOME MAP
+#  GENOME MAP
 # ═══════════════════════════════════════════════════════════════════
-elif page == "📈 Code Genome":
-    st.markdown("## 📈 Code Genome Map")
-    st.markdown(f"t-SNE projection of `{st.session_state.repo_name}`'s vector genome — each dot is a code unit.")
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+elif page == "📈  Genome":
+    st.markdown(
+        '<div class="section-header"><h2>📈 Code Genome</h2></div>'
+        f'<div class="section-header"><span class="subtitle">t-SNE projection of <code>{st.session_state.repo_name}</code> · each dot = one code unit</span></div>',
+        unsafe_allow_html=True,
+    )
 
     proj = st.session_state.evolution_data
-    if proj is None:
-        st.warning("Genome map not available. Please analyze a repository first.")
+    if not proj:
+        st.warning("Genome map not available.")
     else:
         import plotly.express as px
         import pandas as pd
 
         df = pd.DataFrame(proj["points"])
 
-        # Main scatter plot
         fig = px.scatter(
-            df, x="x", y="y",
-            color="language", symbol="type",
-            size="complexity",
-            hover_name="name",
-            hover_data=["file", "loc", "complexity"],
-            title=f"🧬 Code Genome — {st.session_state.repo_name}",
-            color_discrete_map={
-                "python": "#6C5CE7", "javascript": "#FDCB6E", "java": "#E17055",
-            },
+            df, x="x", y="y", color="language", symbol="type", size="complexity",
+            hover_name="name", hover_data=["file", "loc", "complexity"],
+            color_discrete_map={"python": "#7c3aed", "javascript": "#eab308", "java": "#ef4444"},
         )
         fig.update_layout(
-            plot_bgcolor="rgba(15,15,26,0.9)",
-            paper_bgcolor="rgba(0,0,0,0)",
-            font_color="#EAEAEA",
-            height=650,
-            xaxis=dict(showgrid=False, zeroline=False, title="t-SNE Dimension 1"),
-            yaxis=dict(showgrid=False, zeroline=False, title="t-SNE Dimension 2"),
+            plot_bgcolor="#0a0a0f", paper_bgcolor="rgba(0,0,0,0)", font_color="#a1a1aa",
+            height=600, margin=dict(t=10, b=10),
+            xaxis=dict(showgrid=False, zeroline=False, title="", showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, title="", showticklabels=False),
         )
-        fig.update_traces(marker=dict(line=dict(width=0.5, color="#333"), opacity=0.85))
+        fig.update_traces(marker=dict(line=dict(width=0.5, color="#27272a"), opacity=0.85))
         st.plotly_chart(fig, use_container_width=True)
 
-        st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
         # Stats
-        st.markdown("### 📊 Genome Statistics")
-        gs1, gs2, gs3, gs4 = st.columns(4)
-        gs1.metric("Total Units", len(df))
-        gs2.metric("Languages", df["language"].nunique())
-        gs3.metric("Avg Complexity", round(df["complexity"].mean(), 1))
-        gs4.metric("Total LOC", int(df["loc"].sum()))
+        gs = st.columns(4)
+        gs[0].metric("Units", len(df))
+        gs[1].metric("Languages", df["language"].nunique())
+        gs[2].metric("Avg Complexity", round(df["complexity"].mean(), 1))
+        gs[3].metric("Total LOC", int(df["loc"].sum()))
 
-        # Distribution charts
-        st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
-        dc1, dc2 = st.columns(2)
+        st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-        with dc1:
-            lang_fig = px.pie(
-                df, names="language", title="Language Distribution",
-                color="language",
-                color_discrete_map={"python": "#6C5CE7", "javascript": "#FDCB6E", "java": "#E17055"},
-            )
-            lang_fig.update_layout(
-                plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                font_color="#EAEAEA",
-            )
-            st.plotly_chart(lang_fig, use_container_width=True)
-
-        with dc2:
-            type_fig = px.histogram(
-                df, x="type", color="language", title="Code Unit Types",
-                color_discrete_map={"python": "#6C5CE7", "javascript": "#FDCB6E", "java": "#E17055"},
-            )
-            type_fig.update_layout(
-                plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                font_color="#EAEAEA",
-            )
-            st.plotly_chart(type_fig, use_container_width=True)
-
-        # Complexity distribution
-        st.markdown("### 🔬 Complexity Distribution")
-        comp_fig = px.histogram(
-            df, x="complexity", nbins=20, color="language",
-            title="Complexity Distribution Across Code Units",
-            color_discrete_map={"python": "#6C5CE7", "javascript": "#FDCB6E", "java": "#E17055"},
-        )
-        comp_fig.update_layout(
-            plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-            font_color="#EAEAEA",
-        )
-        st.plotly_chart(comp_fig, use_container_width=True)
+        # Distribution
+        d1, d2 = st.columns(2)
+        with d1:
+            fig_l = px.pie(df, names="language", color="language",
+                            color_discrete_map={"python": "#7c3aed", "javascript": "#eab308", "java": "#ef4444"})
+            fig_l.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+                                 font_color="#a1a1aa", height=280, margin=dict(t=10, b=10))
+            st.plotly_chart(fig_l, use_container_width=True)
+        with d2:
+            fig_t = px.histogram(df, x="complexity", nbins=20, color="language",
+                                  color_discrete_map={"python": "#7c3aed", "javascript": "#eab308", "java": "#ef4444"})
+            fig_t.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+                                 font_color="#a1a1aa", height=280, margin=dict(t=10, b=10))
+            st.plotly_chart(fig_t, use_container_width=True)
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  PAGE: ABOUT
+#  ABOUT
 # ═══════════════════════════════════════════════════════════════════
-elif page == "⚙️ About":
-    st.markdown("## ⚙️ About CodeDNA")
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+elif page == "⚙️  About":
+    st.markdown('<div class="section-header"><h2>⚙️ About CodeDNA</h2></div>', unsafe_allow_html=True)
 
     st.markdown(
-        """
-        ### 🧬 What is CodeDNA?
-
-        **CodeDNA** is an AI-powered codebase genome analyzer built on the
-        **[Endee](https://endee.io)** vector database. It treats source code like biological DNA —
-        analyzing its genetic structure, diagnosing its health, and tracking its evolution.
-
-        ### 🔋 How It Works
-
-        1. **Parse** — Extracts functions, classes, and modules from Python, JavaScript, and Java files
-        2. **Embed** — Converts each code unit into a 384-dimensional vector using AI (sentence-transformers)
-        3. **Index** — Stores vectors in 3 Endee indexes (Dense, Hybrid, Anti-Pattern)
-        4. **Analyze** — Runs health diagnostics, semantic search, and evolution tracking
-
-        ### 🛠️ Endee Features Used
-
-        | Feature | Usage |
-        |---|---|
-        | Dense Index (FLOAT16) | Semantic function-level search |
-        | Hybrid Index (INT8) | Dense + Sparse combined retrieval |
-        | Anti-Pattern Index (FLOAT32) | High-precision health diagnostics |
-        | `$eq` filter | Filter by language, unit type |
-        | `$range` filter | Filter by complexity, LOC |
-        | Bulk upsert | Batch vector indexing |
-        | Python SDK | All core engine modules |
-        """
+        '<div class="about-card">'
+        '<h3>What is CodeDNA?</h3>'
+        '<p>An AI-powered codebase analyzer built on the Endee vector database. '
+        'It treats source code like DNA — parsing it into units, converting to 384-dim vectors, '
+        'and using semantic search, health diagnostics, and evolution tracking to give you '
+        'deep insights no grep can match.</p>'
+        '</div>',
+        unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+    a1, a2 = st.columns(2)
+    with a1:
+        st.markdown(
+            '<div class="about-card">'
+            '<h3>🔋 Endee Features Used</h3>'
+            '<p>• Dense Index (FLOAT16) — semantic search<br>'
+            '• Hybrid Index (FLOAT16) — dense + sparse<br>'
+            '• Anti-Pattern Index (FLOAT32) — health<br>'
+            '• $eq, $range filters — advanced queries<br>'
+            '• Bulk upsert — fast batch indexing<br>'
+            '• Python SDK — all core modules</p>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+    with a2:
+        st.markdown(
+            '<div class="about-card">'
+            '<h3>🛠 Tech Stack</h3>'
+            '<p>• Endee Vector Database (Docker)<br>'
+            '• Python 3.10+ (core engine)<br>'
+            '• sentence-transformers (embeddings)<br>'
+            '• scikit-learn (TF-IDF sparse vectors)<br>'
+            '• Streamlit (dashboard)<br>'
+            '• Plotly (interactive charts)</p>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
-    # Endee index info
-    st.markdown("### 📦 Active Endee Indexes")
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+
+    # Active indexes
+    st.markdown("### Active Endee Indexes")
     try:
         from endee import Endee
-        client = Endee()
-        client.set_base_url(f"http://{config.ENDEE_HOST}:{config.ENDEE_PORT}/api/v1")
-        raw_indexes = client.list_indexes()
-        indexes = raw_indexes.get("indexes", []) if isinstance(raw_indexes, dict) else raw_indexes
-        if indexes:
+        c = Endee()
+        c.set_base_url(f"http://{config.ENDEE_HOST}:{config.ENDEE_PORT}/api/v1")
+        raw = c.list_indexes()
+        idx_list = raw.get("indexes", []) if isinstance(raw, dict) else raw
+        if idx_list:
             import pandas as pd
-            idx_data = []
-            for idx in indexes:
-                idx_data.append({
-                    "Name": idx.get("name", ""),
-                    "Dimension": idx.get("dimension", ""),
-                    "Space": idx.get("space_type", ""),
-                })
-            st.dataframe(pd.DataFrame(idx_data), use_container_width=True)
+            st.dataframe(
+                pd.DataFrame([{"Name": i.get("name"), "Dim": i.get("dimension"),
+                                "Space": i.get("space_type")} for i in idx_list]),
+                use_container_width=True, hide_index=True,
+            )
         else:
-            st.info("No indexes yet. Analyze a repo to create them!")
+            st.caption("No indexes yet. Analyze a repo to create them.")
     except Exception as e:
-        st.warning(f"Cannot connect to Endee: {e}")
+        st.caption(f"Cannot connect: {e}")
 
-    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
-
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     st.markdown(
-        f"""
-        ### 📌 Version Info
-        - **CodeDNA** v{config.APP_VERSION}
-        - **Embedding Model:** `{config.EMBEDDING_MODEL}`
-        - **Endee:** `http://{config.ENDEE_HOST}:{config.ENDEE_PORT}`
-
-        ### 🔗 Links
-        - 📖 [Endee Documentation](https://docs.endee.io)
-        - 📂 [Endee GitHub](https://github.com/endee-io/endee)
-        - 🧬 [CodeDNA GitHub](https://github.com/thevikramrajput/endee)
-        """
+        f'<div style="color:#52525b;font-size:0.8rem">'
+        f'CodeDNA v{config.APP_VERSION} · Model: {config.EMBEDDING_MODEL} · '
+        f'<a href="https://github.com/thevikramrajput/endee" style="color:#7c3aed">GitHub</a>'
+        f'</div>',
+        unsafe_allow_html=True,
     )
