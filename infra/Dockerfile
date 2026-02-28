@@ -29,7 +29,7 @@ COPY ./CMakeLists.txt /build_space/CMakeLists.txt
 COPY ./install.sh /build_space/install.sh
 
 # Run build script
-ARG BUILD_ARCH
+ARG BUILD_ARCH=avx2
 ENV BUILD_ARCH=${BUILD_ARCH}
 ARG DEBUG=false
 ENV DEBUG=${DEBUG}
