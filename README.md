@@ -12,6 +12,13 @@
 
 <br>
 
+<div align="center">
+  <a href="https://codedna-production.up.railway.app/" target="_blank">
+    <img src="https://img.shields.io/badge/Live_Demo-🚀_Click_Here_to_Try_CodeDNA-0984E3?style=for-the-badge&logo=rocket" alt="Live Demo">
+  </a>
+</div>
+
+<br>
 <img src="https://img.shields.io/badge/Semantic_Search-✅-00B894?style=flat-square" alt="Semantic Search">
 <img src="https://img.shields.io/badge/Hybrid_Search-✅-6C5CE7?style=flat-square" alt="Hybrid Search">
 <img src="https://img.shields.io/badge/Health_Analysis-✅-E17055?style=flat-square" alt="Health Analysis">
@@ -33,7 +40,6 @@
 - [Project Structure](#-project-structure)
 - [Setup & Installation](#-setup--installation)
 - [Usage Guide](#-usage-guide)
-- [Screenshots & Demo](#-screenshots--demo)
 - [Testing](#-testing)
 - [Technical Deep Dive](#-technical-deep-dive)
 - [Future Enhancements](#-future-enhancements)
@@ -571,6 +577,6 @@ The CodeDNA application code is also available under the Apache License 2.0. See
 
 <div align="center">
 
-**Built with 🧬 by CodeDNA Team | Powered by [Endee](https://endee.io)**
+**Built with 🧬&❤️ by CodeDNA Team | Powered by [Endee](https://endee.io)**
 
 </div>
