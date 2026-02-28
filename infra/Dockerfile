@@ -13,19 +13,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     cmake \
+    clang-19 \
     build-essential \
     libssl-dev \
     libcurl4-openssl-dev \
     unzip \
-    wget \
-    gnupg \
-    software-properties-common \
-    lsb-release \
-    && wget https://apt.llvm.org/llvm.sh \
-    && chmod +x llvm.sh \
-    && ./llvm.sh 19 \
-    && rm llvm.sh \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build_space
 
