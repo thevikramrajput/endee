@@ -1,7 +1,0 @@
-[build]
-builder = "dockerfile"
-dockerfilePath = "codedna/Dockerfile"
-
-[deploy]
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 10
