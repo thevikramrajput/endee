@@ -7,17 +7,25 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=C.UTF-8
 
 # Install build dependencies
+# Install build dependencies including Clang 19
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     git \
     cmake \
-    clang \
     build-essential \
     libssl-dev \
     libcurl4-openssl-dev \
     unzip \
-    && rm -rf /var/lib/apt/lists/*
+    wget \
+    gnupg \
+    software-properties-common \
+    lsb-release \
+    && wget https://apt.llvm.org/llvm.sh \
+    && chmod +x llvm.sh \
+    && ./llvm.sh 19 \
+    && rm llvm.sh \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build_space
 
@@ -34,9 +42,9 @@ ARG DEBUG=false
 ENV DEBUG=${DEBUG}
 RUN chmod +x ./install.sh && \
     if [ "$DEBUG" = "true" ]; then \
-        ./install.sh --${BUILD_ARCH} --debug_all --skip-deps; \
+    ./install.sh --${BUILD_ARCH} --debug_all --skip-deps; \
     else \
-        ./install.sh --${BUILD_ARCH} --release --skip-deps; \
+    ./install.sh --${BUILD_ARCH} --release --skip-deps; \
     fi && \
     cp ./build/ndd-${BUILD_ARCH} ./ndd-server
 
@@ -85,7 +93,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:8080/api/v1/health || exit 1
+    CMD curl -f http://localhost:8080/api/v1/health || exit 1
 
 LABEL org.opencontainers.image.title="endee-oss"
 LABEL org.opencontainers.image.description="Endee Open Source"
